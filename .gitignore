@@ -1,0 +1,13 @@
+# Node dependencies
+frontend/node_modules/
+node_modules/
+
+# Cache and build temp
+frontend/tsconfig.node.tsbuildinfo
+frontend/tsconfig.tsbuildinfo
+.temp/
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+*.log
