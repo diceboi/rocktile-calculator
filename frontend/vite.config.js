@@ -5,41 +5,45 @@ import vue from "@vitejs/plugin-vue";
 import tailwindcss from "@tailwindcss/vite";
 import { fileURLToPath, URL } from "node:url";
 
-const certificateDirectory = path.join(
-  process.env.APPDATA,
-  "Local",
-  "run",
-  "router",
-  "nginx",
-  "certs",
-);
+const certificateDirectory = process.env.APPDATA
+  ? path.join(
+      process.env.APPDATA,
+      "Local",
+      "run",
+      "router",
+      "nginx",
+      "certs",
+    )
+  : null;
+
+const keyPath = certificateDirectory ? path.join(certificateDirectory, "rocktile.local.key") : null;
+const certPath = certificateDirectory ? path.join(certificateDirectory, "rocktile.local.crt") : null;
+const hasHttpsCerts = keyPath && certPath && fs.existsSync(keyPath) && fs.existsSync(certPath);
+
+const serverConfig = {
+  host: "rocktile.local",
+  port: 5173,
+  strictPort: true,
+  cors: true,
+  origin: "https://rocktile.local:5173",
+  hmr: {
+    protocol: "wss",
+    host: "rocktile.local",
+    port: 5173,
+  },
+};
+
+if (hasHttpsCerts) {
+  serverConfig.https = {
+    key: fs.readFileSync(keyPath),
+    cert: fs.readFileSync(certPath),
+  };
+}
 
 export default defineConfig({
   plugins: [vue(), tailwindcss()],
 
-  server: {
-    host: "rocktile.local",
-    port: 5173,
-    strictPort: true,
-    cors: true,
-
-    https: {
-      key: fs.readFileSync(
-        path.join(certificateDirectory, "rocktile.local.key"),
-      ),
-      cert: fs.readFileSync(
-        path.join(certificateDirectory, "rocktile.local.crt"),
-      ),
-    },
-
-    origin: "https://rocktile.local:5173",
-
-    hmr: {
-      protocol: "wss",
-      host: "rocktile.local",
-      port: 5173,
-    },
-  },
+  server: serverConfig,
 
   build: {
     outDir: fileURLToPath(new URL("../dist", import.meta.url)),
