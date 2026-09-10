@@ -1,0 +1,506 @@
+@layer theme, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+/*
+ * Rocktile design system
+ * ----------------------
+ * Brand colors, fonts and shared controls live here. Component
+ * layout stays in the Vue templates as Tailwind utilities, so it can be
+ * adjusted next to the markup without duplicating global visual decisions.
+ */
+@theme {
+  --color-navy: #022a50;
+  --color-navy-dark: #031e38;
+  --color-brick: #cf3f29;
+  --color-brick-hover: #b83622;
+  --color-cream: #eee9e5;
+  --color-warm-white: #fffaf6;
+  --color-surface-muted: #f5f3f0;
+  --color-ink: #475569;
+  --color-muted: #64748b;
+  --color-line: #e2ddd9;
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "Montserrat", "Inter", ui-sans-serif, system-ui, sans-serif;
+
+}
+
+/* Scoped reset: Tailwind's global preflight is intentionally not loaded in WordPress. */
+.rocktile-calculator-ui,
+.rocktile-calculator-ui *,
+.rocktile-calculator-ui *::before,
+.rocktile-calculator-ui *::after {
+  box-sizing: border-box;
+}
+
+.rocktile-calculator-ui img,
+.rocktile-calculator-ui svg {
+  display: block;
+}
+
+@layer components {
+  .rc-step-header {
+    @apply flex flex-col gap-1.5;
+  }
+
+  .rc-step-badge {
+    @apply w-fit bg-brick/8 px-2.5 py-[3px] font-sans text-[11px] font-bold uppercase tracking-[0.8px] text-brick;
+  }
+
+  .rc-step-heading {
+    @apply m-0 font-heading text-xl leading-tight font-extrabold text-navy;
+  }
+
+  .rc-step-subheading {
+    @apply m-0 font-sans text-sm leading-6 text-muted;
+  }
+
+  .rc-btn {
+    @apply inline-flex cursor-pointer items-center justify-center gap-2 whitespace-nowrap border-0 px-[22px] py-3 font-sans text-[15px] font-semibold no-underline transition duration-200 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-brick motion-reduce:transition-none;
+  }
+
+  .rc-btn-primary {
+    @apply bg-brick text-white hover:not-disabled:-translate-y-px hover:not-disabled:bg-brick-hover disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-400;
+  }
+
+  .rc-btn-secondary {
+    @apply border-2 border-line bg-transparent text-ink hover:border-slate-300 hover:bg-cream hover:text-navy;
+  }
+
+  .rc-btn-danger {
+    @apply border-0 bg-red-700 px-4 py-[7px] font-sans text-[13px] font-semibold text-white transition-colors hover:bg-red-800;
+  }
+
+  .rc-field {
+    @apply w-full border-[1.5px] border-slate-300 bg-white font-sans text-navy outline-none transition-colors focus:border-navy;
+  }
+}
+
+/*
+ * Elementor keeps its button rules outside cascade layers, so those rules
+ * would otherwise override Tailwind utilities. These scoped, unlayered rules
+ * make calculator controls independent from the page builder theme.
+ */
+.rocktile-calculator-ui button {
+  appearance: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  text-decoration: none !important;
+  text-shadow: none !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  margin: 0 !important;
+  cursor: pointer !important;
+}
+
+.rocktile-calculator-ui button.rc-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  min-height: 48px !important;
+  margin: 0 !important;
+  padding: 12px 22px !important;
+  border: 2px solid transparent !important;
+  background-image: none !important;
+  font-family: var(--font-heading) !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  text-align: center !important;
+  cursor: pointer !important;
+}
+
+.rocktile-calculator-ui button.rc-btn-primary {
+  background-color: var(--color-brick) !important;
+  border-color: var(--color-brick) !important;
+  color: #fff !important;
+}
+
+.rocktile-calculator-ui button.rc-btn-primary:hover:not(:disabled) {
+  background-color: var(--color-brick-hover) !important;
+  border-color: var(--color-brick-hover) !important;
+  color: #fff !important;
+}
+
+.rocktile-calculator-ui button.rc-btn-primary:disabled {
+  background-color: #cbd5e1 !important;
+  border-color: #cbd5e1 !important;
+  color: #64748b !important;
+  cursor: not-allowed !important;
+}
+
+.rocktile-calculator-ui button.rc-pdf-btn {
+  border: 2px solid var(--color-navy) !important;
+  background-color: #ffffff !important;
+  color: var(--color-navy) !important;
+}
+
+.rocktile-calculator-ui button.rc-pdf-btn:hover:not(:disabled) {
+  border-color: var(--color-brick) !important;
+  background-color: var(--color-warm-white) !important;
+  color: var(--color-brick) !important;
+}
+
+.rocktile-calculator-ui button.rc-pdf-btn:disabled {
+  border-color: #cbd5e1 !important;
+  background-color: #f1f5f9 !important;
+  color: #94a3b8 !important;
+  cursor: not-allowed !important;
+}
+
+.rocktile-calculator-ui button.rc-btn-secondary {
+  border: 2px solid var(--color-line) !important;
+  background-color: transparent !important;
+  color: var(--color-ink) !important;
+}
+
+.rocktile-calculator-ui button.rc-quote-btn {
+  border: 2px solid var(--color-navy) !important;
+  background-color: #ffffff !important;
+  color: var(--color-navy) !important;
+}
+
+.rocktile-calculator-ui button.rc-quote-btn:hover:not(:disabled) {
+  border-color: var(--color-navy) !important;
+  background-color: var(--color-navy) !important;
+  color: #ffffff !important;
+}
+
+.rocktile-calculator-ui button.rc-quote-btn:hover:not(:disabled) svg {
+  color: #ffffff !important;
+}
+
+/* Modal specifikus Elementor-biztos stílusok */
+.rocktile-modal-backdrop {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 99999 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background-color: rgba(15, 23, 42, 0.65) !important;
+  backdrop-filter: blur(4px) !important;
+  padding: 16px !important;
+}
+
+.rocktile-calculator-ui .rocktile-modal-box {
+  background-color: #ffffff !important;
+  color: #1e293b !important;
+  font-family: var(--font-sans) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+  border-radius: 0 !important;
+}
+
+.rocktile-calculator-ui .rc-modal-close {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  min-height: 32px !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  color: #64748b !important;
+  cursor: pointer !important;
+  border-radius: 0 !important;
+  line-height: 1 !important;
+  transition: color 0.2s ease !important;
+}
+
+.rocktile-calculator-ui .rc-modal-close:hover {
+  color: var(--color-navy) !important;
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+.rocktile-calculator-ui button.rc-modal-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  min-height: 40px !important;
+  height: auto !important;
+  padding: 9px 20px !important;
+  margin: 0 !important;
+  font-family: var(--font-heading) !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  text-align: center !important;
+  text-decoration: none !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.rocktile-calculator-ui button.rc-modal-btn-primary {
+  background-color: var(--color-brick) !important;
+  background-image: none !important;
+  border: 2px solid var(--color-brick) !important;
+  color: #ffffff !important;
+}
+
+.rocktile-calculator-ui button.rc-modal-btn-primary:hover:not(:disabled) {
+  background-color: var(--color-brick-hover) !important;
+  border-color: var(--color-brick-hover) !important;
+  color: #ffffff !important;
+}
+
+.rocktile-calculator-ui button.rc-modal-btn-primary:disabled {
+  background-color: #cbd5e1 !important;
+  border-color: #cbd5e1 !important;
+  color: #64748b !important;
+  cursor: not-allowed !important;
+}
+
+.rocktile-calculator-ui button.rc-modal-btn-secondary {
+  background-color: transparent !important;
+  background-image: none !important;
+  border: 2px solid var(--color-line) !important;
+  color: var(--color-ink) !important;
+}
+
+.rocktile-calculator-ui button.rc-modal-btn-secondary:hover:not(:disabled) {
+  background-color: var(--color-cream) !important;
+  border-color: #cbd5e1 !important;
+  color: var(--color-navy) !important;
+}
+
+.rocktile-calculator-ui button.rc-btn-danger {
+  border: 0 !important;
+  background-color: #b91c1c !important;
+  color: #fff !important;
+}
+
+.rocktile-calculator-ui button.rc-edit-btn {
+  margin: 0 !important;
+  padding: 3px 8px !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--color-brick) !important;
+  font-family: var(--font-sans) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+
+.rocktile-calculator-ui button.rc-cart-btn {
+  width: 100% !important;
+  padding: 14px 28px !important;
+  font-family: var(--font-heading) !important;
+  font-size: 16px !important;
+  font-weight: 700 !important;
+}
+
+/* Mennyiség léptető + és - gombok */
+.rocktile-calculator-ui button.rc-qty-btn {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  min-height: 28px !important;
+  max-width: 28px !important;
+  max-height: 28px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--color-navy) !important;
+  font-family: var(--font-heading) !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  cursor: pointer !important;
+  transition: background-color 0.15s ease !important;
+}
+
+.rocktile-calculator-ui button.rc-qty-btn:hover {
+  background-color: var(--color-cream) !important;
+  color: var(--color-navy) !important;
+}
+
+.rocktile-calculator-ui input.rc-qty-input {
+  width: 44px !important;
+  height: 28px !important;
+  margin: 0 !important;
+  padding: 0 2px !important;
+  border-top: 0 !important;
+  border-bottom: 0 !important;
+  border-left: 1px solid #cbd5e1 !important;
+  border-right: 1px solid #cbd5e1 !important;
+  background: #ffffff !important;
+  color: var(--color-navy) !important;
+  font-family: var(--font-heading) !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  text-align: center !important;
+  outline: none !important;
+  box-shadow: none !important;
+  appearance: none !important;
+}
+
+/* Visszaállítás az eredeti kalkulált állapotba gomb */
+.rocktile-calculator-ui button.rc-reset-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  margin: 0 !important;
+  padding: 4px 6px !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--color-navy) !important;
+  font-family: var(--font-sans) !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  text-decoration: underline !important;
+  text-underline-offset: 3px !important;
+  cursor: pointer !important;
+  transition: color 0.15s ease !important;
+}
+
+.rocktile-calculator-ui button.rc-reset-btn:hover {
+  color: var(--color-brick) !important;
+  background: transparent !important;
+}
+
+/* Kémény és választó gombok */
+.rocktile-calculator-ui button.rc-choice-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 10px 18px !important;
+  border: 2px solid var(--color-line) !important;
+  background-color: var(--color-warm-white) !important;
+  color: var(--color-ink) !important;
+  font-family: var(--font-heading) !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+
+.rocktile-calculator-ui button.rc-choice-btn:hover {
+  border-color: #94a3b8 !important;
+  color: var(--color-navy) !important;
+}
+
+.rocktile-calculator-ui button.rc-choice-btn.rc-choice-active-navy {
+  border-color: var(--color-navy) !important;
+  background-color: var(--color-navy) !important;
+  color: #ffffff !important;
+}
+
+.rocktile-calculator-ui button.rc-choice-btn.rc-choice-active-brick {
+  border-color: var(--color-brick) !important;
+  background-color: var(--color-brick) !important;
+  color: #ffffff !important;
+}
+
+/* Törlés (kuka) ikon gomb */
+.rocktile-calculator-ui button.rc-remove-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 6px !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: #94a3b8 !important;
+  cursor: pointer !important;
+  transition: color 0.15s ease !important;
+}
+
+.rocktile-calculator-ui button.rc-remove-btn:hover {
+  background: transparent !important;
+  color: var(--color-brick) !important;
+}
+
+.rocktile-calculator-ui .rc-checkbox-mark {
+  display: block !important;
+  width: 22px !important;
+  height: 22px !important;
+  min-width: 22px !important;
+  border: 2px solid #94a3b8 !important;
+  background: #fff !important;
+}
+
+.rocktile-calculator-ui .rc-checkbox:checked + .rc-checkbox-mark {
+  border-color: var(--color-navy) !important;
+  background: var(--color-navy) !important;
+}
+
+/* Vue transition hooks and visual effects which cannot be expressed on one node. */
+.rc-step-enter-active,
+.rc-step-leave-active,
+.rc-fade-enter-active,
+.rc-confirm-enter-active,
+.rc-breakdown-enter-active {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.rc-step-enter-from,
+.rc-fade-enter-from,
+.rc-confirm-enter-from,
+.rc-breakdown-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.rc-step-enter-from { transform: translateX(12px); }
+.rc-step-leave-to { opacity: 0; transform: translateX(-12px); }
+.rc-hint-enter-active, .rc-hint-leave-active { transition: opacity 0.2s ease; }
+.rc-hint-enter-from, .rc-hint-leave-to { opacity: 0; }
+
+@keyframes rc-spin { to { transform: rotate(360deg); } }
+.rc-spinner { animation: rc-spin 0.8s linear infinite; }
+
+/* Accessible custom checkbox shared by the summary screen. */
+.rc-checkbox:checked + .rc-checkbox-mark {
+  border-color: var(--color-navy);
+  background: var(--color-navy);
+}
+.rc-checkbox:checked + .rc-checkbox-mark::after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 2px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2.5px 2.5px 0;
+  transform: rotate(45deg);
+}
+.rc-checkbox:focus-visible + .rc-checkbox-mark {
+  outline: 2px solid var(--color-brick);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rc-step-enter-active,
+  .rc-step-leave-active,
+  .rc-fade-enter-active,
+  .rc-confirm-enter-active,
+  .rc-breakdown-enter-active,
+  .rc-hint-enter-active,
+  .rc-hint-leave-active { transition: opacity 0.12s ease; }
+  .rc-step-enter-from,
+  .rc-step-leave-to,
+  .rc-fade-enter-from,
+  .rc-confirm-enter-from,
+  .rc-breakdown-enter-from { transform: none; }
+  .rc-spinner { animation: none; }
+}
+
