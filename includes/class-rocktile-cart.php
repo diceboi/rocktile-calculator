@@ -183,7 +183,7 @@ class Rocktile_Calculator_Cart {
 		$error_message        = '';
 
 		foreach ( $itemsToCart as $item ) {
-			$productId = (int) $item['productId'];
+			$productId = Rocktile_Calculator_Products::resolve_product_id( (int) $item['productId'] );
 			// Alapcserépnél a WooCommerce-ben a termék darabáras, így a darabszám kerül a kosárba (pl. 34 csomag = 408 db)
 			$quantity  = ( 'baseTile' === $item['key'] && ! empty( $item['pieces'] ) ) ? (int) $item['pieces'] : (int) $item['quantity'];
 

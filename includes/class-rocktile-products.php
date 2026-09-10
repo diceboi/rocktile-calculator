@@ -304,25 +304,25 @@ class Rocktile_Calculator_Products {
 
 		'nail' => array(
 			'shadow-rock' => array(
-				'productId' => 6125,
+				'productId' => 6147,
 				'sku'       => '',
 				'name'      => 'Rögzítőszeg (Shadow Rock W8318 antracit)',
 				'unit'      => 'kg',
 			),
 			'desert-sunset' => array(
-				'productId' => 6122,
+				'productId' => 6144,
 				'sku'       => '',
 				'name'      => 'Rögzítőszeg (Desert Sunset W2188 vörös)',
 				'unit'      => 'kg',
 			),
 			'crimson-ember' => array(
-				'productId' => 6121,
+				'productId' => 6145,
 				'sku'       => '',
 				'name'      => 'Rögzítőszeg (Crimson Ember W2218 sötétvörös)',
 				'unit'      => 'kg',
 			),
 			'earthwood-chestnut' => array(
-				'productId' => 6124,
+				'productId' => 6146,
 				'sku'       => '',
 				'name'      => 'Rögzítőszeg (Earthwood Chestnut W4618 barna)',
 				'unit'      => 'kg',
@@ -411,6 +411,44 @@ class Rocktile_Calculator_Products {
 	);
 
 	/**
+	 * Local fallback mapping when local database product IDs differ from production.
+	 *
+	 * @var array<int, int>
+	 */
+	const LOCAL_PRODUCT_ID_FALLBACKS = array(
+		6147 => 6125, // Shadow Rock W8318 (antracit)
+		6146 => 6124, // Earthwood Chestnut W4618 (barna)
+		6145 => 6121, // Crimson Ember W2218 (sötétvörös)
+		6144 => 6122, // Desert Sunset W2188 (vörös)
+	);
+
+	/**
+	 * Resolve a product ID, automatically falling back to local ID if the primary ID is not a valid WooCommerce product.
+	 *
+	 * @param int $product_id
+	 * @return int
+	 */
+	public static function resolve_product_id( $product_id ) {
+		$product_id = (int) $product_id;
+		if ( $product_id <= 0 ) {
+			return $product_id;
+		}
+
+		if ( function_exists( 'wc_get_product' ) ) {
+			$product = wc_get_product( $product_id );
+			if ( $product && is_a( $product, 'WC_Product' ) ) {
+				return $product_id;
+			}
+		}
+
+		if ( isset( self::LOCAL_PRODUCT_ID_FALLBACKS[ $product_id ] ) ) {
+			return self::LOCAL_PRODUCT_ID_FALLBACKS[ $product_id ];
+		}
+
+		return $product_id;
+	}
+
+	/**
 	 * Get product item mapping for a specific element key and color.
 	 *
 	 * @param string $itemKey  e.g. 'baseTile', 'ridgeTile', 'starterRidge', etc.
@@ -419,7 +457,9 @@ class Rocktile_Calculator_Products {
 	 */
 	public static function get_item( $itemKey, $colorKey ) {
 		if ( isset( self::PRODUCT_CATALOG[ $itemKey ][ $colorKey ] ) ) {
-			return self::PRODUCT_CATALOG[ $itemKey ][ $colorKey ];
+			$item = self::PRODUCT_CATALOG[ $itemKey ][ $colorKey ];
+			$item['productId'] = self::resolve_product_id( $item['productId'] );
+			return $item;
 		}
 		return null;
 	}
@@ -505,6 +545,7 @@ class Rocktile_Calculator_Products {
 			return $item;
 		}
 
+		$item['productId'] = self::resolve_product_id( $item['productId'] );
 		$product = wc_get_product( (int) $item['productId'] );
 		if ( ! $product ) {
 			return $item;
