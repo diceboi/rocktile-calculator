@@ -3,6 +3,12 @@ import { ref, computed, onMounted } from 'vue';
 import { useCalculator } from '../composables/useCalculator.js';
 import { dimensionFields } from '../config/roofTypes.js';
 import { generatePdfQuote } from '../utils/pdfGenerator.js';
+import {
+  trackQuoteSubmission,
+  trackReviewRequest,
+  trackPdfDownload,
+  trackAddToCart,
+} from '../utils/dataLayer.js';
 
 const {
   state,
@@ -223,6 +229,13 @@ async function sendExpertReviewRequest() {
 
     reviewSuccess.value = true;
     reviewQuoteId.value = data.quoteId || 'RT-REQ';
+
+    trackReviewRequest({
+      quoteId: reviewQuoteId.value,
+      productName: selectedProduct.value?.name,
+      colorName: selectedColor.value?.fullName || selectedColor.value?.name,
+      roofType: (selectedRoofGroup.value?.name || '') + (selectedRoofConfig.value?.name ? ' - ' + selectedRoofConfig.value.name : ''),
+    });
   } catch (err) {
     reviewError.value = err.message || 'Hiba történt az elküldés során.';
   } finally {
@@ -313,6 +326,17 @@ async function submitSendQuoteToStaff() {
     sendQuoteSuccess.value = true;
     sentQuoteId.value = data.quoteId || 'RT-AJ';
     isSendQuoteModalOpen.value = false;
+
+    trackQuoteSubmission({
+      quoteId: sentQuoteId.value,
+      value: grandTotal.value,
+      productName: selectedProduct.value?.name,
+      colorName: selectedColor.value?.fullName || selectedColor.value?.name,
+      roofType: (selectedRoofGroup.value?.name || '') + (selectedRoofConfig.value?.name ? ' - ' + selectedRoofConfig.value.name : ''),
+      paletteCount: paletteCount.value,
+      shippingFee: shippingFeeTotal.value,
+      materialFee: currentTotal.value,
+    });
   } catch (err) {
     sendQuoteError.value = err.message || 'Hiba történt az ajánlat elküldése során.';
   } finally {
@@ -324,6 +348,12 @@ async function submitSendQuoteToStaff() {
 function downloadPdf() {
   pdfLoading.value = true;
   try {
+    trackPdfDownload({
+      value: grandTotal.value || currentTotal.value,
+      productName: selectedProduct.value?.name,
+      roofType: (selectedRoofGroup.value?.name || '') + (selectedRoofConfig.value?.name ? ' - ' + selectedRoofConfig.value.name : ''),
+    });
+
     generatePdfQuote({
       calculationId:    'RT-' + Date.now().toString().slice(-6),
       productName:      selectedProduct.value?.name,
@@ -433,6 +463,11 @@ async function addToCart() {
     }
 
     cartSuccess.value = true;
+    trackAddToCart({
+      value: currentTotal.value,
+      itemsCount: editableItems.value?.length || 0,
+      productName: selectedProduct.value?.name,
+    });
     refreshAndOpenFloatingCart();
   } catch (err) {
     cartError.value = err.message || 'Hiba történt a kosárba helyezés során.';

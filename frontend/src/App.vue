@@ -1,5 +1,7 @@
 <script setup>
+import { onMounted, watch } from "vue";
 import { useCalculator } from "./composables/useCalculator.js";
+import { trackStepView } from "./utils/dataLayer.js";
 import CalculatorProgress from "./components/CalculatorProgress.vue";
 import CalculatorNavigation from "./components/CalculatorNavigation.vue";
 import StepProduct from "./steps/StepProduct.vue";
@@ -9,7 +11,28 @@ import StepVentilation from "./steps/StepVentilation.vue";
 import StepVerge from "./steps/StepVerge.vue";
 import StepSummary from "./steps/StepSummary.vue";
 
-const { state } = useCalculator();
+const { state, selectedProduct } = useCalculator();
+
+function reportCurrentStep(step) {
+  trackStepView(step, {
+    productId: state.product,
+    productName: selectedProduct.value?.name,
+    colorId: state.color,
+    roofType: state.roofType,
+    roofSubtype: state.roofSubtype,
+  });
+}
+
+onMounted(() => {
+  reportCurrentStep(state.currentStep || 1);
+});
+
+watch(
+  () => state.currentStep,
+  (newStep) => {
+    reportCurrentStep(newStep);
+  }
+);
 </script>
 
 <template>
