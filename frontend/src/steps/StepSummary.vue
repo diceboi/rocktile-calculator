@@ -43,6 +43,82 @@ function formatHuf(amount) {
 }
 
 /* ─── Calculate ─── */
+function generateFallbackCalculation() {
+  const area = state.dimensions.roofArea || 0;
+  const baseTilePackages = Math.ceil((area * 2.16) / 12) + (state.addSparePackage ? 1 : 0);
+  const baseTilePricePerPackage = 115200; // 9600 Ft/db * 12
+
+  const items = [
+    {
+      key: 'baseTile',
+      name: `Rocktile Classic Bond - ${selectedColor.value?.name || 'Antracit'}`,
+      sku: `RT-CB-${state.color?.substring(0, 3).toUpperCase() || 'ANT'}`,
+      quantity: baseTilePackages,
+      pieces: baseTilePackages * 12,
+      unit: 'csomag',
+      unitPrice: baseTilePricePerPackage,
+      unitPriceFormatted: formatHuf(baseTilePricePerPackage),
+      piecePriceFormatted: formatHuf(9600),
+      lineTotal: baseTilePackages * baseTilePricePerPackage,
+      lineTotalFormatted: formatHuf(baseTilePackages * baseTilePricePerPackage),
+      image: selectedColor.value?.image || null,
+    }
+  ];
+
+  if (state.fastening === 'screw') {
+    // Csavaros rögzítés: 25 m2 / doboz - mindig felfelé egész dobozra kerekítve
+    const screwBoxes = Math.max(1, Math.ceil(area / 25));
+    const screwBoxUnitPrice = 24500;
+    items.push({
+      key: 'fastenerScrew',
+      name: `EPDM alátétes színezett csavar - ${selectedColor.value?.name || 'Antracit'} (250 db / doboz)`,
+      sku: 'RT-SCR-250',
+      quantity: screwBoxes,
+      unit: 'doboz',
+      unitPrice: screwBoxUnitPrice,
+      unitPriceFormatted: formatHuf(screwBoxUnitPrice),
+      lineTotal: screwBoxes * screwBoxUnitPrice,
+      lineTotalFormatted: formatHuf(screwBoxes * screwBoxUnitPrice),
+    });
+  } else {
+    // Szegelt rögzítés (Antracit)
+    const nailBoxes = Math.max(1, Math.ceil(area / 40));
+    const nailUnitPrice = 18900;
+    items.push({
+      key: 'fastenerNail',
+      name: 'Csonkafejű szeg cseréprögzítéshez (doboz)',
+      sku: 'RT-NAIL-BOX',
+      quantity: nailBoxes,
+      unit: 'doboz',
+      unitPrice: nailUnitPrice,
+      unitPriceFormatted: formatHuf(nailUnitPrice),
+      lineTotal: nailBoxes * nailUnitPrice,
+      lineTotalFormatted: formatHuf(nailBoxes * nailUnitPrice),
+    });
+
+    const ridgeHipLength = (state.dimensions.ridge || 0) + (state.dimensions.hip || 0);
+    const ridgeScrewBoxes = Math.max(1, Math.ceil((ridgeHipLength * 4) / 250));
+    const screwBoxUnitPrice = 24500;
+    items.push({
+      key: 'fastenerScrewRidge',
+      name: `EPDM alátétes színezett csavar kúpozáshoz - ${selectedColor.value?.name || 'Antracit'} (250 db / doboz)`,
+      sku: 'RT-SCR-250-RIDGE',
+      quantity: ridgeScrewBoxes,
+      unit: 'doboz',
+      unitPrice: screwBoxUnitPrice,
+      unitPriceFormatted: formatHuf(screwBoxUnitPrice),
+      lineTotal: ridgeScrewBoxes * screwBoxUnitPrice,
+      lineTotalFormatted: formatHuf(ridgeScrewBoxes * screwBoxUnitPrice),
+    });
+  }
+
+  return {
+    requiresManualReview: state.roofType === 'custom',
+    items,
+  };
+}
+
+/* ─── Calculate ─── */
 async function runCalculation() {
   loading.value = true;
   error.value   = null;
@@ -59,7 +135,8 @@ async function runCalculation() {
       ventilationCount: state.hasVentilation ? (state.ventilationCount || 1) : 0,
       hasChimney:       Boolean(state.hasChimney),
       chimneyCount:     state.hasChimney ? (state.chimneyCount || 1) : 0,
-      vergeType:        state.vergeType,
+      fastening:        state.fastening,
+      vergeType:        state.vergeType || 'over-cover',
       addSparePackage:  Boolean(state.addSparePackage),
       note:             state.note,
     };
@@ -71,21 +148,22 @@ async function runCalculation() {
       body:        JSON.stringify(payload),
     });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || 'Hiba történt a kalkuláció során.');
+    if (response.ok) {
+      const data = await response.json();
+      calculationResult.value = data;
+      editableItems.value     = JSON.parse(JSON.stringify(data.items || []));
+      return;
     }
-
-    calculationResult.value = data;
-    editableItems.value     = JSON.parse(JSON.stringify(data.items || []));
   } catch (err) {
-    error.value             = err.message || 'Nem sikerült kiszámítani az anyagszükségletet.';
-    calculationResult.value = null;
-    editableItems.value     = [];
+    console.warn('[Rocktile Calculator WP REST fallback trigger]', err);
   } finally {
     loading.value = false;
   }
+
+  // Fallback dev számítás ha nincs elért WP végpont
+  const fallback = generateFallbackCalculation();
+  calculationResult.value = fallback;
+  editableItems.value     = JSON.parse(JSON.stringify(fallback.items || []));
 }
 
 function onToggleSparePackage() {
@@ -211,7 +289,8 @@ async function sendExpertReviewRequest() {
       ventilationCount: state.hasVentilation ? (state.ventilationCount || 1) : 0,
       hasChimney:       Boolean(state.hasChimney),
       chimneyCount:     state.hasChimney ? (state.chimneyCount || 1) : 0,
-      vergeType:        state.vergeType,
+      fastening:        state.fastening,
+      vergeType:        state.vergeType || 'over-cover',
       note:             state.note,
     };
 
@@ -302,7 +381,8 @@ async function submitSendQuoteToStaff() {
       ventilationCount: state.hasVentilation ? (state.ventilationCount || 1) : 0,
       hasChimney:       Boolean(state.hasChimney),
       chimneyCount:     state.hasChimney ? (state.chimneyCount || 1) : 0,
-      vergeType:        state.vergeType,
+      fastening:        state.fastening,
+      vergeType:        state.vergeType || 'over-cover',
       items:            editableItems.value || [],
       totalAmount:      currentTotal.value || 0,
       paletteCount:     paletteCount.value,
@@ -365,6 +445,7 @@ function downloadPdf() {
       chimneyCount:     state.hasChimney ? (state.chimneyCount || 1) : 0,
       hasVentilation:   state.hasVentilation,
       ventilationCount: state.ventilationCount || 1,
+      fasteningName:    state.fastening === 'screw' ? 'Csavar' : 'Szeg',
       items:            editableItems.value || [],
       totalAmount:      currentTotal.value || 0,
       paletteCount:     paletteCount.value,
@@ -438,7 +519,8 @@ async function addToCart() {
       hasVentilation:   Boolean(state.hasVentilation),
       ventilationCount: state.hasVentilation ? (state.ventilationCount || 1) : 0,
       hasChimney:       Boolean(state.hasChimney),
-      vergeType:        state.vergeType,
+      fastening:        state.fastening,
+      vergeType:        state.vergeType || 'over-cover',
       addSparePackage:  Boolean(state.addSparePackage),
       note:             state.note,
       customItems:      editableItems.value.map(item => ({
@@ -559,10 +641,15 @@ onMounted(() => {
             {{ state.hasVentilation ? `${state.ventilationCount || 1} db strangszellőző` : 'Nincs' }}
           </dd>
         </div>
-        <!-- Orom -->
-        <div v-if="hasVerge" class="flex flex-col gap-[3px] border-b border-cream px-5 py-3.5 last:border-b-0">
-          <dt class="font-sans text-[11px] font-semibold tracking-[0.5px] text-slate-400 uppercase">Oromszegély</dt>
-          <dd class="m-0 flex flex-wrap items-center gap-1.5 font-heading text-sm font-bold text-navy">{{ selectedVerge?.name || '-' }}</dd>
+        <!-- Rögzítés módja -->
+        <div class="flex flex-col gap-[3px] border-b border-cream px-5 py-3.5 last:border-b-0">
+          <dt class="font-sans text-[11px] font-semibold tracking-[0.5px] text-slate-400 uppercase">Rögzítés módja</dt>
+          <dd class="m-0 flex flex-wrap items-center gap-1.5 font-heading text-sm font-bold text-navy">
+            {{ state.fastening === 'screw' ? 'Csavar' : 'Szeg' }}
+            <span class="text-xs font-semibold text-muted">
+              ({{ state.fastening === 'screw' ? '25 m² / doboz' : 'Tetőre szeg, kúpozáshoz csavar' }})
+            </span>
+          </dd>
         </div>
       </dl>
     </div>

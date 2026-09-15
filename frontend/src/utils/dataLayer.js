@@ -31,7 +31,7 @@ export function trackStepView(stepNumber, context = {}) {
     2: { name: 'Tetőforma kiválasztása', key: 'roof_type' },
     3: { name: 'Méretek megadása', key: 'dimensions' },
     4: { name: 'Szellőzés és kémény', key: 'ventilation' },
-    5: { name: 'Oromszegély kiválasztása', key: 'verge' },
+    5: { name: 'Rögzítés módja', key: 'fastening' },
     6: { name: 'Összesítés és árajánlat', key: 'summary' },
   };
 

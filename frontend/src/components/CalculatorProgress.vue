@@ -2,20 +2,18 @@
 import { computed } from 'vue';
 import { useCalculator } from '../composables/useCalculator.js';
 
-const { state, hasVerge, goToStep } = useCalculator();
+const { state, goToStep } = useCalculator();
 
 const allSteps = [
   { step: 1, title: 'Termék & Szín',  shortTitle: 'Termék',     icon: '🏠' },
   { step: 2, title: 'Tetőforma',       shortTitle: 'Tetőforma',  icon: '⬡' },
   { step: 3, title: 'Méretek',         shortTitle: 'Méretek',    icon: '📐' },
   { step: 4, title: 'Szellőzés',       shortTitle: 'Szellőzés',  icon: '💨' },
-  { step: 5, title: 'Oromszegély',     shortTitle: 'Orom',       requiresVerge: true },
+  { step: 5, title: 'Rögzítés',        shortTitle: 'Rögzítés',   icon: '🔩' },
   { step: 6, title: 'Összesítés',      shortTitle: 'Összesítés', icon: '✅' },
 ];
 
-const visibleSteps = computed(() =>
-  allSteps.filter((s) => !s.requiresVerge || hasVerge.value)
-);
+const visibleSteps = computed(() => allSteps);
 
 // Az aktuális lépés sorszáma a látható lista alapján
 const currentVisibleIndex = computed(() =>

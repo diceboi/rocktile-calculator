@@ -325,6 +325,15 @@ class Rocktile_Calculator_Quote_Request {
 
 		wp_mail( $email, $clientSubject, $clientMessage, $clientHeaders );
 
+		/**
+		 * Fire action when a quote request is successfully submitted from calculator.
+		 * Allows Pipedrive and other integrations to sync quote requests.
+		 *
+		 * @param array  $params   Raw and calculated request parameters.
+		 * @param string $quoteId  Generated unique quote request ID.
+		 */
+		do_action( 'rocktile_quote_request_submitted', $params, $quoteId );
+
 		return new WP_REST_Response(
 			array(
 				'success' => true,

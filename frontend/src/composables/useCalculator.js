@@ -30,7 +30,8 @@ const state = reactive({
   hasChimney: false,       // kémény van-e a tetőn
   chimneyCount: 1,         // kémények darabszáma (ha van, kéményenként 2 db síklemez)
 
-  vergeType: null,         // oromszegély opció ID
+  fastening: 'screw',      // rögzítés módja ('screw' | 'nail') - alapértelmezetten 'screw' (csavar)
+  vergeType: 'over-cover', // fölétakarós oromszegély alapértelmezetten (az oromkialakítás kérdés kivezetve)
 
   addSparePackage: false,  // opcionális +1 csomag alapcserép tartalék
 
@@ -105,7 +106,7 @@ export function useCalculator() {
     return vergeOptions.find((v) => v.id === state.vergeType) || null;
   });
 
-  // Tisztítja a nem releváns méretmezőket és az orom típusát tetőváltáskor
+  // Tisztítja a nem releváns méretmezőket tetőváltáskor
   const cleanupDimensions = () => {
     const validKeys = activeFieldKeys.value;
 
@@ -114,10 +115,6 @@ export function useCalculator() {
         state.dimensions[key] = null;
       }
     });
-
-    if (!hasVerge.value) {
-      state.vergeType = null;
-    }
   };
 
   // Termék kiválasztása
@@ -131,6 +128,19 @@ export function useCalculator() {
   // Szín kiválasztása
   const selectColor = (colorId) => {
     state.color = colorId;
+    // Ha a kiválasztott szín nem Antracit ('shadow-rock'), a szegelt rögzítés nem elérhető -> csavarosra váltás
+    if (colorId !== 'shadow-rock' && state.fastening === 'nail') {
+      state.fastening = 'screw';
+    }
+  };
+
+  // Rögzítés módjának kiválasztása
+  const selectFastening = (fasteningId) => {
+    if (fasteningId === 'nail' && state.color !== 'shadow-rock') {
+      state.fastening = 'screw';
+      return;
+    }
+    state.fastening = fasteningId || 'screw';
   };
 
   // Fő tetőtípus kiválasztása
@@ -208,7 +218,7 @@ export function useCalculator() {
     state.chimneyCount = isNaN(n) || n < 1 ? 1 : n;
   };
 
-  // Oromszegély kiválasztása
+  // Oromszegély kiválasztása (visszakompatibilitás)
   const selectVergeType = (vergeTypeId) => {
     state.vergeType = vergeTypeId;
   };
@@ -246,9 +256,8 @@ export function useCalculator() {
         return true;
 
       case 5:
-        // Ha nincs orom, automatikusan érvényes / átugorva
-        if (!hasVerge.value) return true;
-        return Boolean(state.vergeType);
+        // Rögzítés módja kötelező (alapértelmezetten 'screw')
+        return Boolean(state.fastening);
 
       case 6:
         return true;
@@ -261,25 +270,14 @@ export function useCalculator() {
   // Tovább navigáció
   const nextStep = () => {
     if (!canProceed.value) return;
-
-    if (state.currentStep === 4) {
-      // Ha nincs orom, átugorjuk az 5. lépést (StepVerge) és a 6-ra (StepSummary) ugrunk
-      if (!hasVerge.value) {
-        state.currentStep = 6;
-      } else {
-        state.currentStep = 5;
-      }
-    } else if (state.currentStep < 6) {
+    if (state.currentStep < 6) {
       state.currentStep++;
     }
   };
 
   // Vissza navigáció
   const prevStep = () => {
-    if (state.currentStep === 6 && !hasVerge.value) {
-      // Ha nincs orom, a 6. lépésről egyenesen a 4. lépésre (StepVentilation) lépünk vissza
-      state.currentStep = 4;
-    } else if (state.currentStep > 1) {
+    if (state.currentStep > 1) {
       state.currentStep--;
     }
   };
@@ -287,7 +285,6 @@ export function useCalculator() {
   // Ugrás közvetlen lépésre (ha engedélyezett)
   const goToStep = (stepNumber) => {
     if (stepNumber < 1 || stepNumber > 6) return;
-    if (stepNumber === 5 && !hasVerge.value) return; // Nem ugorhatunk átugrott lépésre
     if (stepNumber < state.currentStep) {
       state.currentStep = stepNumber;
     }
@@ -306,7 +303,8 @@ export function useCalculator() {
     state.ventilationCount = 1;
     state.hasChimney = false;
     state.chimneyCount = 1;
-    state.vergeType = null;
+    state.fastening = 'screw';
+    state.vergeType = 'over-cover';
     state.addSparePackage = false;
     state.note = '';
   };
@@ -325,6 +323,7 @@ export function useCalculator() {
     canProceed,
     selectProduct,
     selectColor,
+    selectFastening,
     selectRoofType,
     selectRoofSubtype,
     setDimension,

@@ -27,6 +27,7 @@ export async function generatePdfQuote({
   chimneyCount,
   hasVentilation,
   ventilationCount,
+  fasteningName,
   items,
   totalAmount,
   paletteCount,
@@ -135,16 +136,16 @@ export async function generatePdfQuote({
               <div style="font-size:13px;font-weight:700;color:#022a50;margin-top:2px;">${productName || 'Rocktile Classic Bond'}</div>
             </div>
             <div>
-              <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;">Kémény:</div>
-              <div style="font-size:13px;font-weight:700;color:#022a50;margin-top:2px;">${hasChimney ? `${chimneyCount || 1} db (${(chimneyCount || 1) * 2} db síklemez)` : 'Nincs'}</div>
+              <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;">Rögzítés módja:</div>
+              <div style="font-size:13px;font-weight:700;color:#022a50;margin-top:2px;">${fasteningName || 'Csavar'}</div>
             </div>
             <div>
               <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;">Választott szín:</div>
               <div style="font-size:13px;font-weight:700;color:#022a50;margin-top:2px;">${colorName || '-'}</div>
             </div>
             <div>
-              <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;">Szellőző:</div>
-              <div style="font-size:13px;font-weight:700;color:#022a50;margin-top:2px;">${hasVentilation ? `${ventilationCount || 1} db átvezető elem` : 'Nem'}</div>
+              <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;">Szellőző / Kémény:</div>
+              <div style="font-size:13px;font-weight:700;color:#022a50;margin-top:2px;">${hasVentilation ? `${ventilationCount || 1} db szellőző` : 'Nincs szellőző'}${hasChimney ? ` / ${chimneyCount || 1} db kémény` : ''}</div>
             </div>
           </div>
         </div>

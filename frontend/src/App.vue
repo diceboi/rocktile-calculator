@@ -8,7 +8,7 @@ import StepProduct from "./steps/StepProduct.vue";
 import StepRoofType from "./steps/StepRoofType.vue";
 import StepDimensions from "./steps/StepDimensions.vue";
 import StepVentilation from "./steps/StepVentilation.vue";
-import StepVerge from "./steps/StepVerge.vue";
+import StepFastening from "./steps/StepFastening.vue";
 import StepSummary from "./steps/StepSummary.vue";
 
 const { state, selectedProduct } = useCalculator();
@@ -60,7 +60,7 @@ watch(
                     : state.currentStep === 4
                       ? StepVentilation
                       : state.currentStep === 5
-                        ? StepVerge
+                        ? StepFastening
                         : StepSummary
             "
             :key="state.currentStep"

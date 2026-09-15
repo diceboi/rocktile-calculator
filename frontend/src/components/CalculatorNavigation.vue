@@ -12,7 +12,7 @@ const hintText = computed(() => {
     case 2: return 'Válassza ki a tetőformát (és altípust) a folytatáshoz.';
     case 3: return 'Töltse ki az összes mértmezőt a folytatáshoz.';
     case 4: return 'Válasszon szellőzési módot a folytatáshoz.';
-    case 5: return 'Válasszon oromszegély típust a folytatáshoz.';
+    case 5: return 'Válassza ki a rögzítés módját a folytatáshoz.';
     default: return null;
   }
 });
