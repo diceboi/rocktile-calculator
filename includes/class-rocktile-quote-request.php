@@ -100,10 +100,8 @@ class Rocktile_Calculator_Quote_Request {
 		$dimHtml = ! empty( $dimLines ) ? '<ul>' . implode( '', $dimLines ) . '</ul>' : '<em>Nem lettek megadva külön méretek</em>';
 
 		$vergeText = 'Nem releváns';
-		if ( 'under-cover' === $vergeType || 'under' === $vergeType ) {
-			$vergeText = 'Alátakarós oromszegély';
-		} elseif ( 'over-cover' === $vergeType || 'over' === $vergeType ) {
-			$vergeText = 'Fölétakarós oromszegély';
+		if ( ! empty( $vergeType ) ) {
+			$vergeText = 'Oromszegély 1270mm';
 		}
 
 		$hasItems = ! empty( $items );

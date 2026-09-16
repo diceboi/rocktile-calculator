@@ -221,12 +221,12 @@ class Rocktile_Calculator_Roof_Config {
 	 */
 	public static function get_verge_name( $key ) {
 		$map = array(
-			'under'       => 'Alátakarós oromszegély',
-			'under-cover' => 'Alátakarós oromszegély',
-			'over'        => 'Fölétakarós oromdeszka szegélylemez',
-			'over-cover'  => 'Fölétakarós oromdeszka szegélylemez',
+			'under'       => 'Oromszegély',
+			'under-cover' => 'Oromszegély',
+			'over'        => 'Oromszegély',
+			'over-cover'  => 'Oromszegély',
 		);
-		return isset( $map[ $key ] ) ? $map[ $key ] : (string) $key;
+		return isset( $map[ $key ] ) ? $map[ $key ] : 'Oromszegély';
 	}
 
 	/**

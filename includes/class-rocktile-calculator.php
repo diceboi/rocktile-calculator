@@ -127,18 +127,8 @@ class Rocktile_Calculator_Engine {
 			$dimensions[ $fieldKey ] = $floatVal;
 		}
 
-		// 5. Oromszegély típus validáció
-		$vergeType = isset( $data['vergeType'] ) ? sanitize_text_field( $data['vergeType'] ) : null;
-		if ( $roofConfig['hasVerge'] ) {
-			$allowedVerge = array( 'under', 'under-cover', 'over', 'over-cover' );
-			if ( empty( $vergeType ) || ! in_array( $vergeType, $allowedVerge, true ) ) {
-				return new WP_Error(
-					'missing_verge_type',
-					'A választott tetőformához kötelező kiválasztani az oromszegély típusát (alátakarós vagy fölétakarós).',
-					array( 'status' => 400 )
-				);
-			}
-		}
+		// 5. Oromszegély típus (alapértelmezetten 'over-cover')
+		$vergeType = isset( $data['vergeType'] ) && ! empty( $data['vergeType'] ) ? sanitize_text_field( $data['vergeType'] ) : 'over-cover';
 
 		// 6. Szellőzés (opcionális: 'none', 'yes', 'standard' + darabszám)
 		$ventilation = isset( $data['ventilation'] ) ? sanitize_text_field( $data['ventilation'] ) : 'none';
@@ -334,16 +324,15 @@ class Rocktile_Calculator_Engine {
 			}
 		}
 
-		// 5. Oromszegély számítás (Alátakarós vagy Fölétakarós)
+		// 5. Oromszegély számítás (ROCKTILE Oromszegély 1270mm)
 		if ( $roofConfig['hasVerge'] && isset( $dimensions['verge'] ) && $dimensions['verge'] > 0 ) {
 			$vergeMeters    = $dimensions['verge'];
 			$vergeQuantity  = (int) ceil( $vergeMeters / self::FLASHING_COVERAGE_M );
-			$isOverCover    = in_array( $input['vergeType'], array( 'over', 'over-cover' ), true );
-			$vergeItemKey   = $isOverCover ? 'vergeOver' : 'vergeUnder';
+			$vergeItemKey   = 'vergeUnder';
 
 			$calculations['verge'] = array(
 				'meters'          => $vergeMeters,
-				'type'            => $isOverCover ? 'fölétakarós' : 'alátakarós',
+				'type'            => 'oromszegély',
 				'coveragePerItem' => self::FLASHING_COVERAGE_M,
 				'quantity'        => $vergeQuantity,
 			);
