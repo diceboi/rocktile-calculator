@@ -254,6 +254,53 @@ const reviewError = ref(null);
 const reviewSuccess = ref(false);
 const reviewQuoteId = ref(null);
 
+function buildRoofSummaryText(userNote = '') {
+  const lines = [];
+  lines.push('=== ROCKTILE TETŐKALKULÁCIÓ ÉS ÁRAJÁNLAT ADATOK ===');
+  if (userNote) {
+    lines.push('\n[ÜGYFÉL MEGJEGYZÉSE / KÉRDÉSE]:\n' + userNote);
+  }
+  lines.push('\n--- TETŐ ÉS TERMÉK ADATOK ---');
+  lines.push('• Tetőforma: ' + (selectedRoofConfig.value?.name || state.roofType || '-'));
+  lines.push('• Termékcsalád: ' + (selectedProduct.value?.name || '-'));
+  lines.push('• Választott szín: ' + (selectedColor.value?.fullName || selectedColor.value?.name || '-'));
+  lines.push('• Rögzítés módja: ' + (state.fastening === 'screw' ? 'Csavaros rögzítés (25 m² / doboz)' : 'Szegelt rögzítés (tetőre szeg, kúpozáshoz csavar)'));
+  lines.push('• Kémény: ' + (state.hasChimney ? `Igen (${state.chimneyCount || 1} db kémény)` : 'Nincs'));
+  lines.push('• Szellőzés: ' + (state.hasVentilation ? `Igen (${state.ventilationCount || 1} db átvezető elem)` : 'Nem kér'));
+  lines.push('• Oromszegély: ' + (state.vergeType ? 'Oromszegély 1270mm' : 'Nem releváns'));
+
+  lines.push('\n--- MEGADOTT MÉRETEK ---');
+  if (state.dimensions) {
+    const dimMap = {
+      roofArea: 'Tetőfelület (m²)',
+      ridge: 'Tetőgerinc (fm)',
+      hip: 'Élgerinc (fm)',
+      valley: 'Vápa (fm)',
+      eaves: 'Eresz (fm)',
+      verge: 'Oromszegély (fm)',
+    };
+    for (const [k, v] of Object.entries(state.dimensions)) {
+      if (v) lines.push(`• ${dimMap[k] || k}: ${v}`);
+    }
+  }
+
+  if (editableItems.value && editableItems.value.length) {
+    lines.push('\n--- KALKULÁLT ANYAGSZÜKSÉGLET ÉS ÁRAK ---');
+    lines.push('• Anyagok részösszege: ' + (currentTotalFormatted.value || '-'));
+    lines.push('• Raklap díj: ' + (paletteCount.value || 0) + ' db = ' + (paletteFeeTotalFormatted.value || '-'));
+    lines.push('• Szállítási díj: ' + (shippingFeeTotalFormatted.value || '-'));
+    lines.push('• ÁRAJÁNLAT VÉGÖSSZEGE (bruttó): ' + (grandTotalFormatted.value || '-'));
+  }
+
+  if (state.landingUrl || state.referrerUrl) {
+    lines.push('\n--- ÉRKEZÉSI MARKETING ADATOK ---');
+    if (state.landingUrl) lines.push('• Landing oldal: ' + state.landingUrl);
+    if (state.referrerUrl) lines.push('• Referrer: ' + state.referrerUrl);
+  }
+
+  return lines.join('\n');
+}
+
 async function sendExpertReviewRequest() {
   contactTouched.value = true;
   reviewError.value = null;
@@ -278,6 +325,8 @@ async function sendExpertReviewRequest() {
       name:             contactName.value.trim(),
       email:            contactEmail.value.trim(),
       phone:            contactPhone.value.trim(),
+      customerNote:     state.note || '',
+      note:             buildRoofSummaryText(state.note || ''),
       product:          state.product,
       color:            state.color,
       roofType:         state.roofType,
@@ -292,7 +341,6 @@ async function sendExpertReviewRequest() {
       vergeType:        state.vergeType || 'over-cover',
       landingUrl:       state.landingUrl,
       referrer:         state.referrerUrl,
-      note:             state.note,
     };
 
     const res = await fetch('/wp-json/rocktile/v1/request-review', {
@@ -371,7 +419,8 @@ async function submitSendQuoteToStaff() {
       name:             sendQuoteName.value.trim(),
       email:            sendQuoteEmail.value.trim(),
       phone:            sendQuotePhone.value.trim(),
-      note:             sendQuoteNote.value.trim(),
+      customerNote:     sendQuoteNote.value.trim(),
+      note:             buildRoofSummaryText(sendQuoteNote.value.trim()),
       product:          state.product,
       color:            state.color,
       roofType:         state.roofType,
@@ -1043,7 +1092,7 @@ onMounted(() => {
           <polyline points="22 4 12 14.01 9 11.01"></polyline>
         </svg>
         <div class="flex flex-col gap-1">
-          <strong class="font-heading text-base font-bold text-green-900">Az ajánlatot sikeresen elküldtük kollégáinknak!</strong>
+          <strong class="font-heading text-base font-bold text-green-900">Az ajánlatot sikeresen beküldtük kollégáinknak!</strong>
           <p class="m-0 text-green-800 leading-relaxed">
             Azonosító: <strong>{{ sentQuoteId }}</strong>. Munkatársaink hamarosan felveszik Önnel a kapcsolatot a megadott elérhetőségeken. A kalkuláció részleteit és a visszaigazolást az Ön e-mail címére is elküldtük.
           </p>
@@ -1113,7 +1162,7 @@ onMounted(() => {
           <span>{{ reviewLoading ? 'Küldés folyamatban...' : reviewSuccess ? 'Ajánlatkérés elküldve ✓' : 'Szakértői ajánlatkérés elküldése' }}</span>
         </button>
 
-        <!-- SZTENDERD TETŐFORMA: Ajánlat elküldése kollégáknak gomb -->
+        <!-- SZTENDERD TETŐFORMA: Ajánlat beküldése kollégáinknak gomb -->
         <button
           v-if="!calculationResult?.requiresManualReview"
           type="button"
@@ -1125,7 +1174,7 @@ onMounted(() => {
             <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
             <polyline points="22,6 12,13 2,6"></polyline>
           </svg>
-          <span>Ajánlat elküldése kollégáknak</span>
+          <span>Ajánlat beküldése kollégáinknak</span>
         </button>
 
         <!-- SZTENDERD TETŐFORMA: Kosárba rakom gomb -->
@@ -1163,10 +1212,10 @@ onMounted(() => {
           <div class="flex items-start justify-between gap-4 border-b border-cream pb-3">
             <div>
               <h3 id="send-quote-title" class="m-0 font-heading text-lg font-bold text-navy">
-                Ajánlat elküldése kollégáinknak
+                Ajánlat beküldése kollégáinknak
               </h3>
               <p class="mt-1 mb-0 font-sans text-xs text-muted leading-relaxed">
-                Nem szeretne most azonnal vásárolni? Küldje el a kalkulációt, és munkatársaink hamarosan felveszik Önnel a kapcsolatot!
+                Nem szeretne most azonnal vásárolni? Küldje be a kalkulációt, és munkatársaink hamarosan felveszik Önnel a kapcsolatot!
               </p>
             </div>
             <button
@@ -1253,7 +1302,7 @@ onMounted(() => {
 
             <div class="flex flex-col gap-1">
               <label for="sq-note" class="font-heading text-xs font-bold text-navy">
-                Megjegyzés a kollégák számára <span class="text-slate-400 font-normal">(opcionális)</span>
+                Megjegyzés kollégáink számára <span class="text-slate-400 font-normal">(opcionális)</span>
               </label>
               <textarea
                 id="sq-note"
@@ -1279,7 +1328,7 @@ onMounted(() => {
                 :disabled="sendQuoteLoading"
               >
                 <span v-if="sendQuoteLoading" class="rc-spinner size-3.5 shrink-0 rounded-full border-2 border-white/35 border-t-white" aria-hidden="true"></span>
-                <span>{{ sendQuoteLoading ? 'Küldés...' : 'Ajánlat elküldése' }}</span>
+                <span>{{ sendQuoteLoading ? 'Beküldés...' : 'Ajánlat beküldése' }}</span>
               </button>
             </div>
           </form>

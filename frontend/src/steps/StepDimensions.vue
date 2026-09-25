@@ -196,18 +196,22 @@ async function submitStep3Help() {
 
   try {
     const payload = {
-      name:        helpName.value.trim(),
-      email:       helpEmail.value.trim(),
-      phone:       helpPhone.value.trim(),
-      note:        helpNote.value.trim(),
-      source:      'step3_help_request',
-      landingUrl:  state.landingUrl,
-      referrer:    state.referrerUrl,
-      product:     state.product,
-      color:       state.color,
-      roofType:    state.roofType,
-      roofSubtype: state.roofSubtype,
-      dimensions:  { ...state.dimensions },
+      name:            helpName.value.trim(),
+      email:           helpEmail.value.trim(),
+      phone:           helpPhone.value.trim(),
+      note:            helpNote.value.trim(),
+      source:          'step3_help_request',
+      label:           'rockile-segitseg',
+      tag:             'rockile-segitseg',
+      deal_label:      'rockile-segitseg',
+      pipedrive_label: 'rockile-segitseg',
+      landingUrl:      state.landingUrl,
+      referrer:        state.referrerUrl,
+      product:         state.product,
+      color:           state.color,
+      roofType:        state.roofType,
+      roofSubtype:     state.roofSubtype,
+      dimensions:      { ...state.dimensions },
     };
 
     const res = await fetch('/wp-json/rocktile/v1/request-review', {
@@ -226,6 +230,9 @@ async function submitStep3Help() {
 
     pushDataLayer({
       event: 'calculator_step3_help_request',
+      label: 'rockile-segitseg',
+      tag: 'rockile-segitseg',
+      quote_id: data.quoteId || null,
       product_name: selectedProduct.value?.name,
       color_name: selectedColor.value?.fullName || selectedColor.value?.name,
       roof_type: (selectedRoofGroup.value?.name || '') + (selectedRoofConfig.value?.name ? ' - ' + selectedRoofConfig.value.name : ''),

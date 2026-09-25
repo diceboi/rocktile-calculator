@@ -115,6 +115,87 @@ class Rocktile_Calculator_Quote_Request {
 		$quotePrefix = $isStep3Help ? 'RT-HELP-' : ( $hasItems ? 'RT-AJ-' : 'RT-REQ-' );
 		$quoteId = $quotePrefix . strtoupper( substr( md5( uniqid( (string) time(), true ) ), 0, 6 ) );
 
+		$chimneyText = $hasChimney ? sprintf( 'Igen (%d db kémény, %d db síklemez)', $chimneyCount, $chimneyCount * 2 ) : 'Nincs';
+		$ventText    = $hasVent ? sprintf( 'Igen (%d db átvezető elem)', $ventCount ) : 'Nem kér';
+
+		// Összeállítjuk a Pipedrive / CRM / Megjegyzés szöveges összefoglalót az összes kitöltött adattal
+		$summaryLines = array();
+		if ( $isStep3Help ) {
+			$summaryLines[] = "=== [CÍMKE: rockile-segitseg] SEGÍTSÉGKÉRÉS A MÉRETEKHEZ (3. LÉPÉS) ===";
+			$summaryLines[] = "Pipedrive Címke: rockile-segitseg";
+		} else {
+			$summaryLines[] = "=== ROCKTILE TETŐKALKULÁCIÓ ÉS ÁRAJÁNLAT ADATOK ===";
+		}
+		$summaryLines[] = "Azonosító: " . $quoteId;
+		$summaryLines[] = "Dátum: " . current_time( 'Y.m.d. H:i' );
+
+		if ( ! empty( $note ) ) {
+			$summaryLines[] = "\n[ÜGYFÉL EGYEDI MEGJEGYZÉSE / KÉRDÉSE]:\n" . $note;
+		}
+
+		$summaryLines[] = "\n--- TETŐ ÉS TERMÉK ADATOK ---";
+		$summaryLines[] = "• Tetőforma: " . $roofName;
+		$summaryLines[] = "• Termékcsalád: " . $productName;
+		$summaryLines[] = "• Választott szín: " . $colorName;
+		$summaryLines[] = "• Rögzítés módja: " . $fasteningText;
+		$summaryLines[] = "• Kémény: " . $chimneyText;
+		$summaryLines[] = "• Szellőzés: " . $ventText;
+		$summaryLines[] = "• Oromszegély: " . $vergeText;
+
+		$summaryLines[] = "\n--- MEGADOTT MÉRETEK ---";
+		if ( ! empty( $dimensions ) ) {
+			foreach ( $dimensions as $k => $v ) {
+				$label = isset( $labels[ $k ] ) ? $labels[ $k ] : $k;
+				$unit  = isset( $units[ $k ] ) ? $units[ $k ] : '';
+				$summaryLines[] = "• {$label}: {$v} {$unit}";
+			}
+		} else {
+			$summaryLines[] = "Nem lettek megadva külön méretek.";
+		}
+
+		if ( $hasItems ) {
+			$summaryLines[] = "\n--- KALKULÁLT ANYAGSZÜKSÉGLET ÉS ÁRAK ---";
+			$summaryLines[] = "• Anyagok részösszege (bruttó, 27% áfával): " . number_format( $materialTotal, 0, ',', ' ' ) . " Ft";
+			$summaryLines[] = "• Raklap díj ({$paletteCount} db × br. 3 810 Ft): " . number_format( $paletteFeeTotal, 0, ',', ' ' ) . " Ft";
+			$summaryLines[] = "• Várható szállítási díj ({$paletteCount} raklap × br. 38 100 Ft): " . number_format( $shippingFeeTotal, 0, ',', ' ' ) . " Ft";
+			$summaryLines[] = "• ÁRAJÁNLAT VÉGÖSSZEGE (bruttó): " . number_format( $grandTotal, 0, ',', ' ' ) . " Ft";
+
+			$summaryLines[] = "\nTételes anyaglista:";
+			foreach ( $items as $it ) {
+				$iN = isset( $it['name'] ) ? $it['name'] : '-';
+				$iQ = isset( $it['quantity'] ) ? (int) $it['quantity'] : 1;
+				$iU = isset( $it['unit'] ) ? $it['unit'] : 'db';
+				$iP = isset( $it['lineTotalFormatted'] ) ? $it['lineTotalFormatted'] : ( isset( $it['lineTotal'] ) ? number_format( (float) $it['lineTotal'], 0, ',', ' ' ) . ' Ft' : '' );
+				$summaryLines[] = "  - {$iQ} {$iU} {$iN} (" . ( $iP ? $iP : '-' ) . ")";
+			}
+		}
+
+		if ( ! empty( $landingUrl ) || ! empty( $referrer ) ) {
+			$summaryLines[] = "\n--- ÉRKEZÉSI MARKETING ADATOK ---";
+			if ( ! empty( $landingUrl ) ) {
+				$summaryLines[] = "• Landing oldal: " . $landingUrl;
+			}
+			if ( ! empty( $referrer ) ) {
+				$summaryLines[] = "• Referrer: " . $referrer;
+			}
+		}
+
+		$fullNote = implode( "\n", $summaryLines );
+
+		// Frissítjük a paramétereket a Pipedrive és külső integrációk számára
+		$params['customer_note']  = $note;
+		$params['note']           = $fullNote;
+		$params['full_note']      = $fullNote;
+		$params['pipedrive_note'] = $fullNote;
+
+		if ( $isStep3Help ) {
+			$params['label']           = 'rockile-segitseg';
+			$params['tag']             = 'rockile-segitseg';
+			$params['tags']            = array( 'rockile-segitseg' );
+			$params['deal_label']      = 'rockile-segitseg';
+			$params['pipedrive_label'] = 'rockile-segitseg';
+		}
+
 		// Tételes anyagszükséglet táblázat HTML összeállítása (ha van kalkulált lista)
 		$itemsTableHtml = '';
 		if ( $hasItems ) {
@@ -205,13 +286,11 @@ class Rocktile_Calculator_Quote_Request {
 
 		if ( $isStep3Help ) {
 			$mailTitle = 'Rocktile – Segítségkérés a méretekhez (3. lépés)';
-			$subject   = sprintf( '[Rocktile Kalkulátor] Segítségkérés a méretekhez: %s (%s)', $name, $roofName );
+			$subject   = sprintf( '[Rocktile Kalkulátor] [rockile-segitseg] Segítségkérés a méretekhez: %s (%s)', $name, $roofName );
 		} else {
 			$mailTitle = $hasItems ? 'Rocktile – Új kalkulált árajánlat megkeresés' : 'Rocktile – Új szakértői ajánlatkérés';
 			$subject   = sprintf( '[Rocktile Kalkulátor] %s: %s (%s)', $hasItems ? 'Új árajánlat' : 'Szakértői ajánlatkérés', $name, $roofName );
 		}
-
-		$chimneyText = $hasChimney ? sprintf( 'Igen (%d db kémény, %d db síklemez)', $chimneyCount, $chimneyCount * 2 ) : 'Nincs';
 
 		// Formázzuk a marketing / érkezési adatokat
 		$landingHtml = ! empty( $landingUrl )
@@ -230,7 +309,12 @@ class Rocktile_Calculator_Quote_Request {
 			? '<div style="background: #eff6ff; border-left: 4px solid #0284c7; padding: 12px 16px; margin: 20px 25px 0 25px; border-radius: 4px;">
 				<strong style="color: #0369a1; font-size: 14px;">Segítségkérés a 3. lépésnél (Méretek felmérése)</strong>
 				<p style="margin: 4px 0 0 0; font-size: 13px; color: #1e3a8a; line-height: 1.4;">A látogató a méretek megadásánál kér segítséget. Elérhetőségeit megadta, hogy munkatársunk segítse a felmérést és az árajánlat elkészítését.</p>
+				<p style="margin: 8px 0 0 0; font-size: 12px; color: #0369a1;"><strong>Pipedrive Címke:</strong> <span style="background: #fef08a; color: #854d0e; font-weight: bold; font-family: monospace; padding: 2px 8px; border-radius: 3px;">rockile-segitseg</span></p>
 			</div>'
+			: '';
+
+		$pipedriveLabelRow = $isStep3Help
+			? '<p style="margin: 6px 0;"><strong>Pipedrive Címke:</strong> <span style="background: #fef08a; color: #854d0e; font-weight: bold; font-family: monospace; padding: 2px 8px; border-radius: 3px;">rockile-segitseg</span></p>'
 			: '';
 
 		$message = sprintf(
@@ -251,6 +335,7 @@ class Rocktile_Calculator_Quote_Request {
 						<p style="margin: 6px 0;"><strong>Név:</strong> %s</p>
 						<p style="margin: 6px 0;"><strong>Email:</strong> <a href="mailto:%s" style="color: #cf3f29;">%s</a></p>
 						<p style="margin: 6px 0;"><strong>Telefonszám:</strong> %s</p>
+						%s
 
 						<h3 style="color: #022a50; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-top: 25px;">Érkezési adatok (Marketing forrás):</h3>
 						<p style="margin: 6px 0;"><strong>Érkezési oldal (Landing URL):</strong> %s</p>
@@ -270,7 +355,10 @@ class Rocktile_Calculator_Quote_Request {
 
 						%s
 
-						%s
+						<div style="background: #fffaf6; border-left: 4px solid #cf3f29; padding: 15px; margin-top: 25px; border-radius: 4px;">
+							<strong style="color: #022a50; font-size: 14px; display: block; margin-bottom: 6px;">Pipedrive / CRM Részletes Megjegyzés és Tetőadatok:</strong>
+							<pre style="white-space: pre-wrap; font-family: Arial, sans-serif; font-size: 12px; color: #334155; line-height: 1.5; margin: 0; background: #ffffff; padding: 12px; border: 1px solid #fed7aa; border-radius: 3px;">%s</pre>
+						</div>
 					</div>
 
 					<div style="background: #f1f5f9; padding: 15px 25px; font-size: 12px; color: #64748b; text-align: center; border-top: 1px solid #e2e8f0;">
@@ -287,6 +375,7 @@ class Rocktile_Calculator_Quote_Request {
 			esc_attr( $email ),
 			esc_html( $email ),
 			$phoneHtml,
+			$pipedriveLabelRow,
 			$landingHtml,
 			$referrerHtml,
 			esc_html( $roofName ),
@@ -294,11 +383,11 @@ class Rocktile_Calculator_Quote_Request {
 			esc_html( $colorName ),
 			esc_html( $fasteningText ),
 			$chimneyText,
-			$hasVent ? sprintf( 'Igen (%d db)', $ventCount ) : 'Nem',
+			esc_html( $ventText ),
 			esc_html( $vergeText ),
 			$dimHtml,
 			$itemsTableHtml,
-			! empty( $note ) ? sprintf( '<div style="background: #fffaf6; border-left: 4px solid #cf3f29; padding: 12px 15px; margin-top: 20px;"><strong style="color: #022a50;">Ügyfél megjegyzése / kérdése:</strong><p style="margin: 5px 0 0 0; font-style: italic; color: #334155;">%s</p></div>', nl2br( esc_html( $note ) ) ) : ''
+			esc_html( $fullNote )
 		);
 
 		// Feladó adatok (kalkulator@rocktile.eu)
@@ -393,16 +482,23 @@ class Rocktile_Calculator_Quote_Request {
 		do_action( 'rocktile_quote_request_submitted', $params, $quoteId );
 
 		$respMessage = $isStep3Help
-			? 'Segítségkérését sikeresen elküldtük kollégáinknak! Munkatársunk hamarosan felveszi Önnel a kapcsolatot.'
-			: 'Ajánlatkérését sikeresen elküldtük kollégáinknak! Munkatársunk hamarosan felveszi Önnel a kapcsolatot.';
+			? 'Segítségkérését sikeresen beküldtük kollégáinknak! Munkatársunk hamarosan felveszi Önnel a kapcsolatot.'
+			: 'Ajánlatkérését sikeresen beküldtük kollégáinknak! Munkatársunk hamarosan felveszi Önnel a kapcsolatot.';
 
-		return new WP_REST_Response(
-			array(
-				'success' => true,
-				'quoteId' => $quoteId,
-				'message' => $respMessage,
-			),
-			200
+		$responsePayload = array(
+			'success' => true,
+			'quoteId' => $quoteId,
+			'message' => $respMessage,
+			'note'    => $fullNote,
 		);
+
+		if ( $isStep3Help ) {
+			$responsePayload['label']           = 'rockile-segitseg';
+			$responsePayload['tag']             = 'rockile-segitseg';
+			$responsePayload['deal_label']      = 'rockile-segitseg';
+			$responsePayload['pipedrive_label'] = 'rockile-segitseg';
+		}
+
+		return new WP_REST_Response( $responsePayload, 200 );
 	}
 }
