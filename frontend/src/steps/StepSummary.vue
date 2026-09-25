@@ -237,7 +237,10 @@ const PALETTE_FEE_BRUTTO = 3810;
 const SHIPPING_FEE_BRUTTO = 38100; // 30.000 Ft + áfa = 38.100 Ft
 
 const paletteFeeTotal = computed(() => paletteCount.value * PALETTE_FEE_BRUTTO);
+const paletteFeeTotalFormatted = computed(() => formatHuf(paletteFeeTotal.value));
+
 const shippingFeeTotal = computed(() => paletteCount.value * SHIPPING_FEE_BRUTTO);
+const shippingFeeTotalFormatted = computed(() => formatHuf(shippingFeeTotal.value));
 
 const grandTotal = computed(() => {
   return (currentTotal.value || 0) + (paletteFeeTotal.value || 0) + (shippingFeeTotal.value || 0);
