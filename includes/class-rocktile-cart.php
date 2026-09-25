@@ -227,12 +227,17 @@ class Rocktile_Calculator_Cart {
 		}
 
 		// 8. Kalkuláció mentése sessionbe
+		$landingUrl = ! empty( $params['landingUrl'] ) ? esc_url_raw( $params['landingUrl'] ) : '';
+		$referrer   = ! empty( $params['referrer'] ) ? esc_url_raw( $params['referrer'] ) : '';
+
 		if ( WC()->session ) {
 			WC()->session->set(
 				'rocktile_calc_' . $calculationId,
 				array(
 					'calculationId' => $calculationId,
 					'createdAt'     => current_time( 'mysql' ),
+					'landingUrl'    => $landingUrl,
+					'referrer'      => $referrer,
 					'input'         => $validated,
 					'result'        => $calcResult,
 				)
@@ -307,18 +312,33 @@ class Rocktile_Calculator_Cart {
 		}
 
 		$calculations = array();
+		$landingUrl   = '';
+		$referrer     = '';
+
 		foreach ( $order->get_items() as $item ) {
 			$calcId = $item->get_meta( 'rocktile_calculation_id' );
 			if ( $calcId ) {
 				$sessionData = WC()->session->get( 'rocktile_calc_' . $calcId );
 				if ( $sessionData && ! isset( $calculations[ $calcId ] ) ) {
 					$calculations[ $calcId ] = $sessionData;
+					if ( empty( $landingUrl ) && ! empty( $sessionData['landingUrl'] ) ) {
+						$landingUrl = $sessionData['landingUrl'];
+					}
+					if ( empty( $referrer ) && ! empty( $sessionData['referrer'] ) ) {
+						$referrer = $sessionData['referrer'];
+					}
 				}
 			}
 		}
 
 		if ( ! empty( $calculations ) ) {
 			$order->update_meta_data( '_rocktile_calculations', $calculations );
+			if ( ! empty( $landingUrl ) ) {
+				$order->update_meta_data( '_rocktile_landing_url', $landingUrl );
+			}
+			if ( ! empty( $referrer ) ) {
+				$order->update_meta_data( '_rocktile_referrer', $referrer );
+			}
 			$order->save();
 		}
 	}

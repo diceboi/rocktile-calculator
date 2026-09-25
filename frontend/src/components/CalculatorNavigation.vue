@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 import { useCalculator } from '../composables/useCalculator.js';
 
-const { state, canProceed, nextStep, prevStep } = useCalculator();
+const { state, canProceed, nextStep, prevStep, openStep3Help } = useCalculator();
 
 // Hint szöveg ha a Tovább gomb tiltva
 const hintText = computed(() => {
@@ -56,6 +56,21 @@ const navigateAndScroll = (navigate) => {
           {{ hintText }}
         </p>
       </transition>
+
+      <button
+        v-if="state.currentStep === 3"
+        type="button"
+        class="rc-nav-help-btn max-[480px]:w-full"
+        @click="openStep3Help"
+        aria-label="Segítséget kérek a méretek megadásához"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="size-4" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+        Segítséget kérek
+      </button>
 
       <button
         v-if="state.currentStep < 6"

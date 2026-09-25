@@ -16,13 +16,14 @@ class Rocktile_Calculator_Engine {
 	/**
 	 * Calculation constants.
 	 */
-	const BASE_TILE_PIECES_PER_M2 = 2.16;
-	const BASE_TILE_PER_PACKAGE   = 12;
-	const RIDGE_PIECES_PER_METER  = 2.63;
-	const FLASHING_COVERAGE_M     = 1.17; // 1170 mm hasznos fedési hossz
-	const NAIL_COVERAGE_M2_PER_KG = 40;   // 1 kg / 40 m2
-	const SCREW_COVERAGE_M2_PER_BOX = 150; // 1 doboz / 150 m2
-	const VENTILATION_PER_ROOF    = 1;   // Ideiglenes V1 üzleti szabály: 1 db / tetőkalkuláció
+	const BASE_TILE_PIECES_PER_M2         = 2.16;
+	const BASE_TILE_PER_PACKAGE           = 12;
+	const RIDGE_PIECES_PER_METER          = 2.63;
+	const FLASHING_COVERAGE_M             = 1.17; // 1170 mm hasznos fedési hossz
+	const NAIL_COVERAGE_M2_PER_KG         = 40;   // 1 kg / 40 m2 (szegelt rögzítéshez)
+	const SCREW_COVERAGE_M2_PER_BOX       = 25;   // 25 m2 / doboz (komplett tető csavaros rögzítéséhez)
+	const SCREW_COVERAGE_M2_PER_BOX_RIDGE = 150;  // 1 doboz / 150 m2 (szegelt rögzítés esetén a kúpozáshoz)
+	const VENTILATION_PER_ROOF            = 1;   // Ideiglenes V1 üzleti szabály: 1 db / tetőkalkuláció
 
 	/**
 	 * Calculate required ventilation product quantity.
@@ -160,10 +161,20 @@ class Rocktile_Calculator_Engine {
 			$addSparePackage = filter_var( $data['addSparePackage'], FILTER_VALIDATE_BOOLEAN );
 		}
 
-		// 9. Megjegyzés
+		// 9. Rögzítés módja ('screw' | 'nail' - alapértelmezetten 'screw')
+		$fastening = isset( $data['fastening'] ) ? sanitize_text_field( $data['fastening'] ) : 'screw';
+		// Szegelt rögzítés kizárólag Antracit ('shadow-rock') színnél engedélyezett
+		if ( 'nail' === $fastening && 'shadow-rock' !== $color ) {
+			$fastening = 'screw';
+		}
+		if ( ! in_array( $fastening, array( 'screw', 'nail' ), true ) ) {
+			$fastening = 'screw';
+		}
+
+		// 10. Megjegyzés
 		$note = isset( $data['note'] ) ? sanitize_textarea_field( $data['note'] ) : '';
 
-		// 10. Egyedi / szerkesztett tételek (ha a kosárba tételkor módosított tételeket kapunk)
+		// 11. Egyedi / szerkesztett tételek (ha a kosárba tételkor módosított tételeket kapunk)
 		$customItems = isset( $data['customItems'] ) && is_array( $data['customItems'] ) ? $data['customItems'] : null;
 
 		return array(
@@ -180,6 +191,7 @@ class Rocktile_Calculator_Engine {
 			'ventilationCount' => $ventilationCount,
 			'hasChimney'       => $hasChimney,
 			'chimneyCount'     => $chimneyCount,
+			'fastening'        => $fastening,
 			'addSparePackage'  => $addSparePackage,
 			'note'             => $note,
 			'customItems'      => $customItems,
@@ -395,44 +407,74 @@ class Rocktile_Calculator_Engine {
 			}
 		}
 
-		// 9. Rögzítőszeg (1 kg / 40 m2)
-		$nailQuantity = (int) ceil( $roofArea / self::NAIL_COVERAGE_M2_PER_KG );
-		$calculations['nails'] = array(
-			'roofArea'        => $roofArea,
-			'coveragePerKg'   => self::NAIL_COVERAGE_M2_PER_KG,
-			'quantity'        => $nailQuantity,
-		);
-
-		$nailProd = Rocktile_Calculator_Products::get_item( 'nail', $color );
-		if ( $nailProd && $nailQuantity > 0 ) {
-			$items[] = array(
-				'key'       => 'nail',
-				'name'      => $nailProd['name'],
-				'productId' => $nailProd['productId'],
-				'sku'       => $nailProd['sku'],
-				'quantity'  => $nailQuantity,
-				'unit'      => $nailProd['unit'],
-			);
+		// 9. Rögzítés (Csavaros vs. Szegelt rögzítés)
+		$fastening = isset( $input['fastening'] ) ? $input['fastening'] : 'screw';
+		if ( 'nail' === $fastening && 'shadow-rock' !== $color ) {
+			$fastening = 'screw';
 		}
 
-		// 10. Önfúró csavar 35mm (1 doboz / 150 m2)
-		$screwQuantity = (int) ceil( $roofArea / self::SCREW_COVERAGE_M2_PER_BOX );
-		$calculations['screws'] = array(
-			'roofArea'        => $roofArea,
-			'coveragePerBox'  => self::SCREW_COVERAGE_M2_PER_BOX,
-			'quantity'        => $screwQuantity,
-		);
-
-		$screwProd = Rocktile_Calculator_Products::get_item( 'screw', $color );
-		if ( $screwProd && $screwQuantity > 0 ) {
-			$items[] = array(
-				'key'       => 'screw',
-				'name'      => $screwProd['name'],
-				'productId' => $screwProd['productId'],
-				'sku'       => $screwProd['sku'],
-				'quantity'  => $screwQuantity,
-				'unit'      => $screwProd['unit'],
+		if ( 'screw' === $fastening ) {
+			// Csavaros rögzítés a komplett tetőhöz: 25 m2 / doboz - mindig felfelé egész dobozra kerekítve (szeg nem kerül a kalkulációba)
+			$screwQuantity = (int) ceil( $roofArea / self::SCREW_COVERAGE_M2_PER_BOX );
+			$calculations['screws'] = array(
+				'mode'           => 'screw',
+				'roofArea'       => $roofArea,
+				'coveragePerBox' => self::SCREW_COVERAGE_M2_PER_BOX,
+				'quantity'       => $screwQuantity,
 			);
+
+			$screwProd = Rocktile_Calculator_Products::get_item( 'screw', $color );
+			if ( $screwProd && $screwQuantity > 0 ) {
+				$items[] = array(
+					'key'       => 'screw',
+					'name'      => $screwProd['name'],
+					'productId' => $screwProd['productId'],
+					'sku'       => $screwProd['sku'],
+					'quantity'  => $screwQuantity,
+					'unit'      => $screwProd['unit'],
+				);
+			}
+		} else {
+			// Szegelt rögzítés (kizárólag Antracit színnél): tetőre szeg (40 m2/kg), kúpozáshoz csavar (150 m2/doboz)
+			$nailQuantity = (int) ceil( $roofArea / self::NAIL_COVERAGE_M2_PER_KG );
+			$calculations['nails'] = array(
+				'mode'          => 'nail',
+				'roofArea'      => $roofArea,
+				'coveragePerKg' => self::NAIL_COVERAGE_M2_PER_KG,
+				'quantity'      => $nailQuantity,
+			);
+
+			$nailProd = Rocktile_Calculator_Products::get_item( 'nail', $color );
+			if ( $nailProd && $nailQuantity > 0 ) {
+				$items[] = array(
+					'key'       => 'nail',
+					'name'      => $nailProd['name'],
+					'productId' => $nailProd['productId'],
+					'sku'       => $nailProd['sku'],
+					'quantity'  => $nailQuantity,
+					'unit'      => $nailProd['unit'],
+				);
+			}
+
+			$screwQuantity = (int) ceil( $roofArea / self::SCREW_COVERAGE_M2_PER_BOX_RIDGE );
+			$calculations['screws'] = array(
+				'mode'           => 'nail_ridge',
+				'roofArea'       => $roofArea,
+				'coveragePerBox' => self::SCREW_COVERAGE_M2_PER_BOX_RIDGE,
+				'quantity'       => $screwQuantity,
+			);
+
+			$screwProd = Rocktile_Calculator_Products::get_item( 'screw', $color );
+			if ( $screwProd && $screwQuantity > 0 ) {
+				$items[] = array(
+					'key'       => 'screw',
+					'name'      => $screwProd['name'],
+					'productId' => $screwProd['productId'],
+					'sku'       => $screwProd['sku'],
+					'quantity'  => $screwQuantity,
+					'unit'      => $screwProd['unit'],
+				);
+			}
 		}
 
 		// 11. Szellőzés (Opcionális: kiválasztás esetén a megadott darabszám, alapértelmezetten 1 db)

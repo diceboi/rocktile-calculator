@@ -4,6 +4,35 @@ import { roofTypes, dimensionFields } from '../config/roofTypes.js';
 import { ventilationOptions } from '../config/ventilation.js';
 import { vergeOptions } from '../config/vergeTypes.js';
 
+// Kezdeti érkezési oldal és hivatkozó oldal rögzítése
+function getInitialLandingUrl() {
+  if (typeof window === 'undefined') return '';
+  try {
+    let stored = sessionStorage.getItem('rocktile_landing_url');
+    if (!stored) {
+      stored = window.location.href;
+      sessionStorage.setItem('rocktile_landing_url', stored);
+    }
+    return stored;
+  } catch (e) {
+    return window.location.href || '';
+  }
+}
+
+function getInitialReferrer() {
+  if (typeof window === 'undefined') return '';
+  try {
+    let stored = sessionStorage.getItem('rocktile_referrer');
+    if (!stored) {
+      stored = document.referrer || '';
+      sessionStorage.setItem('rocktile_referrer', stored);
+    }
+    return stored;
+  } catch (e) {
+    return document.referrer || '';
+  }
+}
+
 // Központi singleton reaktív állapot
 const state = reactive({
   currentStep: 1,
@@ -36,6 +65,10 @@ const state = reactive({
   addSparePackage: false,  // opcionális +1 csomag alapcserép tartalék
 
   note: '',                // opcionális megjegyzés
+
+  isStep3HelpModalOpen: false, // 3. lépés segítségkérő felugró ablak
+  landingUrl: getInitialLandingUrl(),
+  referrerUrl: getInitialReferrer(),
 });
 
 export function useCalculator() {
@@ -309,6 +342,15 @@ export function useCalculator() {
     state.note = '';
   };
 
+  // 3. lépés segítségkérő ablak kezelése
+  const openStep3Help = () => {
+    state.isStep3HelpModalOpen = true;
+  };
+
+  const closeStep3Help = () => {
+    state.isStep3HelpModalOpen = false;
+  };
+
   return {
     state,
     selectedProduct,
@@ -338,5 +380,7 @@ export function useCalculator() {
     prevStep,
     goToStep,
     resetCalculator,
+    openStep3Help,
+    closeStep3Help,
   };
 }

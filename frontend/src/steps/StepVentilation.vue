@@ -8,8 +8,8 @@ const { catalog, loadCatalog } = useProductCatalog();
 
 const activeOption = {
   id: 'ventilation-standard',
-  name: 'ROCKTILE strangszellőző',
-  description: 'Átvezető elem a tetőn keresztüli szellőztetéshez.',
+  name: 'ROCKTILE szellőző / átvezető elem',
+  description: 'Átvezető elem csövek vagy vezetékek tetőn keresztüli kivezetéséhez.',
   image: null,
 };
 
@@ -49,9 +49,9 @@ onMounted(() => {
     <!-- Step header -->
     <div class="rc-step-header">
       <span class="rc-step-badge">4. lépés</span>
-      <h2 class="rc-step-heading">Szellőző (átvezető elem)</h2>
+      <h2 class="rc-step-heading">Tetőn átmenő szellőző / átvezető elem</h2>
       <p class="rc-step-subheading">
-        Ennek a termékcsaládnak nincs külön szellőzőcserepe. Amennyiben tetőn átmenő szellőzőre vagy strangszellőzőre van szüksége, itt igényelheti.
+        Szeretne a tetőn átmenő kivezető vagy szellőző elemet hozzáadni a rendeléshez?
       </p>
     </div>
 
@@ -70,6 +70,21 @@ onMounted(() => {
       </div>
     </div>
 
+    <!-- Kiemelt gyors magyarázó sáv: Fontos tudnivaló -->
+    <div class="flex items-start gap-3.5 border-2 border-blue-200 bg-blue-50/90 p-4 rounded-sm">
+      <div class="flex size-7 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white font-bold text-xs mt-0.5">
+        i
+      </div>
+      <div class="flex flex-col gap-1">
+        <strong class="font-heading text-sm font-bold text-navy">
+          Fontos tudnivaló a szellőzésről
+        </strong>
+        <p class="m-0 font-sans text-xs leading-relaxed text-slate-700">
+          A Rocktile tető szellőzése <strong>alapból teljes és tökéletesen megoldott a gerincnél</strong> lévő szellőzőréseken át. Ezt a külön átvezető elemet <strong>csak akkor válassza, ha valamilyen csövet</strong> (pl. konyhai páraelszívó kivezetést, ventilátor csövet) <strong>vagy kábelt</strong> (pl. napelem vezetéket, antennát) kell átvezetnie a tetőn a szabadba!
+        </p>
+      </div>
+    </div>
+
     <!-- Igen / Nem választó kártyák -->
     <div class="grid grid-cols-2 gap-4 max-sm:grid-cols-1">
       <!-- NEM KÉREK -->
@@ -80,7 +95,7 @@ onMounted(() => {
       >
         <div class="flex flex-col gap-2">
           <div class="flex items-center justify-between">
-            <span class="font-heading text-base font-bold text-navy">Nem kérek szellőzőt</span>
+            <span class="font-heading text-base font-bold text-navy">Nem kérek átvezető elemet</span>
             <span
               class="flex size-5 items-center justify-center rounded-full border-2"
               :class="!state.hasVentilation ? 'border-navy bg-navy text-white' : 'border-slate-300'"
@@ -91,7 +106,7 @@ onMounted(() => {
             </span>
           </div>
           <p class="m-0 font-sans text-xs leading-5 text-muted">
-            Nem kerül szellőző elem a kalkulációba és az anyagszükségletbe.
+            <strong>Ajánlott választás, ha nincs átvezetendő cső vagy vezeték.</strong> A tető természetes szellőzése a gerincnél enélkül is 100%-ban garantált.
           </p>
         </div>
       </div>
@@ -107,7 +122,7 @@ onMounted(() => {
       >
         <div class="flex flex-col gap-2">
           <div class="flex items-center justify-between">
-            <span class="font-heading text-base font-bold text-navy">Igen, kérek szellőzőt</span>
+            <span class="font-heading text-base font-bold text-navy">Igen, kérek átvezető elemet</span>
             <span
               class="flex size-5 items-center justify-center rounded-full border-2"
               :class="state.hasVentilation ? 'border-brick bg-brick text-white' : 'border-slate-300'"
@@ -118,7 +133,7 @@ onMounted(() => {
             </span>
           </div>
           <p class="m-0 font-sans text-xs leading-5 text-muted">
-            {{ isBrownColor ? 'Barna színben jelenleg nem választható.' : 'ROCKTILE strangszellőző elem a választott tetőszínben.' }}
+            {{ isBrownColor ? 'Barna színben jelenleg nem választható.' : 'Csak akkor szükséges, ha konyhai páraelszívó csövet, ventilátort vagy kábelt vezet át a tetőn.' }}
           </p>
         </div>
       </div>
@@ -179,7 +194,7 @@ onMounted(() => {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="size-4 shrink-0 text-brick">
             <polyline points="20 6 9 17 4 12"></polyline>
           </svg>
-          {{ state.ventilationCount || 1 }} db strangszellőző kerül a rendelésbe.
+          {{ state.ventilationCount || 1 }} db szellőző / átvezető elem kerül a rendelésbe.
         </div>
       </div>
     </transition>

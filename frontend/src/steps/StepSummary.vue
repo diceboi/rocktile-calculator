@@ -70,8 +70,8 @@ function generateFallbackCalculation() {
     const screwBoxes = Math.max(1, Math.ceil(area / 25));
     const screwBoxUnitPrice = 24500;
     items.push({
-      key: 'fastenerScrew',
-      name: `EPDM alátétes színezett csavar - ${selectedColor.value?.name || 'Antracit'} (250 db / doboz)`,
+      key: 'screw',
+      name: `LW-R önfúró rögzítő csavar 4,8×35mm - ${selectedColor.value?.name || 'Antracit'} (250 db / doboz)`,
       sku: 'RT-SCR-250',
       quantity: screwBoxes,
       unit: 'doboz',
@@ -82,26 +82,25 @@ function generateFallbackCalculation() {
     });
   } else {
     // Szegelt rögzítés (Antracit)
-    const nailBoxes = Math.max(1, Math.ceil(area / 40));
-    const nailUnitPrice = 18900;
+    const nailKg = Math.max(1, Math.ceil(area / 40));
+    const nailUnitPrice = 4500;
     items.push({
-      key: 'fastenerNail',
-      name: 'Csonkafejű szeg cseréprögzítéshez (doboz)',
-      sku: 'RT-NAIL-BOX',
-      quantity: nailBoxes,
-      unit: 'doboz',
+      key: 'nail',
+      name: `Rögzítőszeg - ${selectedColor.value?.name || 'Antracit'}`,
+      sku: 'RT-NAIL',
+      quantity: nailKg,
+      unit: 'kg',
       unitPrice: nailUnitPrice,
       unitPriceFormatted: formatHuf(nailUnitPrice),
-      lineTotal: nailBoxes * nailUnitPrice,
-      lineTotalFormatted: formatHuf(nailBoxes * nailUnitPrice),
+      lineTotal: nailKg * nailUnitPrice,
+      lineTotalFormatted: formatHuf(nailKg * nailUnitPrice),
     });
 
-    const ridgeHipLength = (state.dimensions.ridge || 0) + (state.dimensions.hip || 0);
-    const ridgeScrewBoxes = Math.max(1, Math.ceil((ridgeHipLength * 4) / 250));
+    const ridgeScrewBoxes = Math.max(1, Math.ceil(area / 150));
     const screwBoxUnitPrice = 24500;
     items.push({
-      key: 'fastenerScrewRidge',
-      name: `EPDM alátétes színezett csavar kúpozáshoz - ${selectedColor.value?.name || 'Antracit'} (250 db / doboz)`,
+      key: 'screw',
+      name: `LW-R önfúró rögzítő csavar 4,8×35mm kúpozáshoz - ${selectedColor.value?.name || 'Antracit'} (250 db / doboz)`,
       sku: 'RT-SCR-250-RIDGE',
       quantity: ridgeScrewBoxes,
       unit: 'doboz',
@@ -291,6 +290,8 @@ async function sendExpertReviewRequest() {
       chimneyCount:     state.hasChimney ? (state.chimneyCount || 1) : 0,
       fastening:        state.fastening,
       vergeType:        state.vergeType || 'over-cover',
+      landingUrl:       state.landingUrl,
+      referrer:         state.referrerUrl,
       note:             state.note,
     };
 
@@ -389,6 +390,8 @@ async function submitSendQuoteToStaff() {
       paletteFeeTotal:  paletteFeeTotal.value,
       shippingFeeTotal: shippingFeeTotal.value,
       grandTotal:       grandTotal.value,
+      landingUrl:       state.landingUrl,
+      referrer:         state.referrerUrl,
     };
 
     const res = await fetch('/wp-json/rocktile/v1/request-review', {
@@ -522,6 +525,8 @@ async function addToCart() {
       fastening:        state.fastening,
       vergeType:        state.vergeType || 'over-cover',
       addSparePackage:  Boolean(state.addSparePackage),
+      landingUrl:       state.landingUrl,
+      referrer:         state.referrerUrl,
       note:             state.note,
       customItems:      editableItems.value.map(item => ({
         key: item.key,
@@ -638,7 +643,7 @@ onMounted(() => {
         <div class="flex flex-col gap-[3px] border-b border-cream px-5 py-3.5 last:border-b-0">
           <dt class="font-sans text-[11px] font-semibold tracking-[0.5px] text-slate-400 uppercase">Szellőzés</dt>
           <dd class="m-0 flex flex-wrap items-center gap-1.5 font-heading text-sm font-bold text-navy">
-            {{ state.hasVentilation ? `${state.ventilationCount || 1} db strangszellőző` : 'Nincs' }}
+            {{ state.hasVentilation ? `${state.ventilationCount || 1} db szellőző elem` : 'Nincs' }}
           </dd>
         </div>
         <!-- Rögzítés módja -->

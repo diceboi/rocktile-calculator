@@ -172,8 +172,147 @@
   color: #ffffff !important;
 }
 
+/* ══════════════════════════════════════════════════════
+   Segítségkérő gombok & Mérési segédlet (Elementor ellen védve)
+══════════════════════════════════════════════════════ */
+
+/* Navigációban a "Segítséget kérek" gomb */
+.rocktile-calculator-ui button.rc-nav-help-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  min-height: 48px !important;
+  height: auto !important;
+  margin: 0 !important;
+  padding: 11px 20px !important;
+  border: 2px solid #b45309 !important;
+  background-color: #fffbeb !important;
+  background-image: none !important;
+  color: #78350f !important;
+  font-family: var(--font-heading) !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  text-decoration: none !important;
+  text-transform: none !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06) !important;
+  border-radius: 2px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.rocktile-calculator-ui button.rc-nav-help-btn:hover {
+  background-color: #fef3c7 !important;
+  border-color: #92400e !important;
+  color: #451a03 !important;
+}
+
+.rocktile-calculator-ui button.rc-nav-help-btn svg {
+  color: #b45309 !important;
+  stroke: currentColor !important;
+}
+
+/* 3. lépés alsó segítségkérő kártyája */
+.rocktile-calculator-ui .rc-help-card {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 20px !important;
+  background-color: #fffbeb !important;
+  border: 2px solid #fcd34d !important;
+  border-radius: 4px !important;
+  padding: 20px !important;
+  margin-top: 10px !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04) !important;
+}
+
+@media (max-width: 768px) {
+  .rocktile-calculator-ui .rc-help-card {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+}
+
+.rocktile-calculator-ui button.rc-help-card-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  min-height: 44px !important;
+  height: auto !important;
+  padding: 10px 22px !important;
+  margin: 0 !important;
+  border: 2px solid #b45309 !important;
+  background-color: #d97706 !important;
+  background-image: none !important;
+  color: #ffffff !important;
+  font-family: var(--font-heading) !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  text-decoration: none !important;
+  text-transform: none !important;
+  border-radius: 2px !important;
+  box-shadow: 0 2px 4px rgba(180, 83, 9, 0.25) !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  transition: all 0.2s ease !important;
+}
+
+.rocktile-calculator-ui button.rc-help-card-btn:hover {
+  background-color: #b45309 !important;
+  border-color: #92400e !important;
+  color: #ffffff !important;
+}
+
+/* Kérdőjeles mérési segédlet gombok az input mezők végén */
+.rocktile-calculator-ui button.rc-dim-tip-btn {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 26px !important;
+  height: 26px !important;
+  min-width: 26px !important;
+  min-height: 26px !important;
+  max-width: 26px !important;
+  max-height: 26px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 50% !important;
+  border: 1.5px solid var(--color-navy) !important;
+  background-color: #ffffff !important;
+  background-image: none !important;
+  color: var(--color-navy) !important;
+  font-family: var(--font-heading), sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+  text-align: center !important;
+  text-decoration: none !important;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08) !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  position: absolute !important;
+  right: 8px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  z-index: 2 !important;
+}
+
+.rocktile-calculator-ui button.rc-dim-tip-btn:hover,
+.rocktile-calculator-ui button.rc-dim-tip-btn:focus-visible {
+  background-color: var(--color-navy) !important;
+  color: #ffffff !important;
+  border-color: var(--color-navy) !important;
+  outline: none !important;
+}
+
 /* Modal specifikus Elementor-biztos stílusok */
-.rocktile-modal-backdrop {
+.rocktile-modal-backdrop,
+.rocktile-calculator-ui .rocktile-modal-backdrop {
   position: fixed !important;
   inset: 0 !important;
   z-index: 99999 !important;
@@ -185,6 +324,7 @@
   padding: 16px !important;
 }
 
+.rocktile-modal-box,
 .rocktile-calculator-ui .rocktile-modal-box {
   background-color: #ffffff !important;
   color: #1e293b !important;
@@ -193,7 +333,9 @@
   border-radius: 0 !important;
 }
 
-.rocktile-calculator-ui .rc-modal-close {
+.rc-modal-close,
+.rocktile-calculator-ui .rc-modal-close,
+.rocktile-calculator-ui button.rc-modal-close {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -201,10 +343,13 @@
   height: 32px !important;
   min-width: 32px !important;
   min-height: 32px !important;
+  max-width: 32px !important;
+  max-height: 32px !important;
   background: transparent !important;
   background-color: transparent !important;
   background-image: none !important;
   border: none !important;
+  outline: none !important;
   box-shadow: none !important;
   padding: 0 !important;
   margin: 0 !important;
@@ -215,12 +360,23 @@
   transition: color 0.2s ease !important;
 }
 
-.rocktile-calculator-ui .rc-modal-close:hover {
+.rc-modal-close:hover,
+.rocktile-calculator-ui .rc-modal-close:hover,
+.rocktile-calculator-ui button.rc-modal-close:hover {
   color: var(--color-navy) !important;
   background: transparent !important;
   background-color: transparent !important;
+  border: none !important;
 }
 
+.rc-modal-close svg,
+.rocktile-calculator-ui .rc-modal-close svg {
+  width: 20px !important;
+  height: 20px !important;
+  stroke: currentColor !important;
+}
+
+button.rc-modal-btn,
 .rocktile-calculator-ui button.rc-modal-btn {
   display: inline-flex !important;
   align-items: center !important;
@@ -244,6 +400,7 @@
   transition: all 0.2s ease !important;
 }
 
+button.rc-modal-btn-primary,
 .rocktile-calculator-ui button.rc-modal-btn-primary {
   background-color: var(--color-brick) !important;
   background-image: none !important;
@@ -251,12 +408,14 @@
   color: #ffffff !important;
 }
 
+button.rc-modal-btn-primary:hover:not(:disabled),
 .rocktile-calculator-ui button.rc-modal-btn-primary:hover:not(:disabled) {
   background-color: var(--color-brick-hover) !important;
   border-color: var(--color-brick-hover) !important;
   color: #ffffff !important;
 }
 
+button.rc-modal-btn-primary:disabled,
 .rocktile-calculator-ui button.rc-modal-btn-primary:disabled {
   background-color: #cbd5e1 !important;
   border-color: #cbd5e1 !important;
@@ -264,6 +423,7 @@
   cursor: not-allowed !important;
 }
 
+button.rc-modal-btn-secondary,
 .rocktile-calculator-ui button.rc-modal-btn-secondary {
   background-color: transparent !important;
   background-image: none !important;
@@ -271,6 +431,7 @@
   color: var(--color-ink) !important;
 }
 
+button.rc-modal-btn-secondary:hover:not(:disabled),
 .rocktile-calculator-ui button.rc-modal-btn-secondary:hover:not(:disabled) {
   background-color: var(--color-cream) !important;
   border-color: #cbd5e1 !important;
@@ -463,6 +624,14 @@
 .rc-step-leave-to { opacity: 0; transform: translateX(-12px); }
 .rc-hint-enter-active, .rc-hint-leave-active { transition: opacity 0.2s ease; }
 .rc-hint-enter-from, .rc-hint-leave-to { opacity: 0; }
+
+.rc-modal-enter-active, .rc-modal-leave-active {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.rc-modal-enter-from, .rc-modal-leave-to {
+  opacity: 0;
+  transform: scale(0.97);
+}
 
 @keyframes rc-spin { to { transform: rotate(360deg); } }
 .rc-spinner { animation: rc-spin 0.8s linear infinite; }

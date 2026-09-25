@@ -149,7 +149,7 @@ class Rocktile_Calculator_Order_Admin {
 		echo '<div class="rocktile-admin-panel-wrapper">';
 
 		foreach ( $calculations as $calcId => $calcData ) {
-			$this->render_calculation_block( $calcId, $calcData, $orderedItemsByCalc[ $calcId ] ?? array() );
+			$this->render_calculation_block( $calcId, $calcData, $orderedItemsByCalc[ $calcId ] ?? array(), $order );
 		}
 
 		echo '</div>';
@@ -158,11 +158,12 @@ class Rocktile_Calculator_Order_Admin {
 	/**
 	 * Render a single calculation block.
 	 *
-	 * @param string $calcId
-	 * @param array  $calcData
-	 * @param array  $orderedItems
+	 * @param string   $calcId
+	 * @param array    $calcData
+	 * @param array    $orderedItems
+	 * @param WC_Order $order
 	 */
-	private function render_calculation_block( $calcId, $calcData, $orderedItems ) {
+	private function render_calculation_block( $calcId, $calcData, $orderedItems, $order = null ) {
 		$input  = $calcData['input'] ?? array();
 		$result = $calcData['result'] ?? array();
 
@@ -175,6 +176,8 @@ class Rocktile_Calculator_Order_Admin {
 		$hasVerge      = ! empty( $roofConfig['hasVerge'] );
 		$vergeName     = $hasVerge && ! empty( $input['vergeType'] ) ? Rocktile_Calculator_Roof_Config::get_verge_name( $input['vergeType'] ) : '-';
 		$ventName      = ! empty( $input['ventilation'] ) ? Rocktile_Calculator_Roof_Config::get_ventilation_name( $input['ventilation'] ) : 'Standard pontszellőzés';
+		$fastening     = $input['fastening'] ?? 'screw';
+		$fasteningName = ( 'nail' === $fastening ) ? 'Szeg (tetőre szeg, kúpozáshoz csavar)' : 'Csavar (25 m² / doboz)';
 		$addSpare      = ! empty( $input['addSparePackage'] );
 		$note          = $input['note'] ?? '';
 
@@ -182,6 +185,9 @@ class Rocktile_Calculator_Order_Admin {
 		$sparePackages = $calcBaseTile['sparePackages'] ?? ( $addSpare ? 1 : 0 );
 		$calculatedPackages = $calcBaseTile['calculatedPackages'] ?? ( $calcBaseTile['packages'] ?? 0 );
 		$finalPackages = $calcBaseTile['finalPackages'] ?? ( $calculatedPackages + $sparePackages );
+
+		$landingUrl = $calcData['landingUrl'] ?? ( $input['landingUrl'] ?? ( $order ? $order->get_meta( '_rocktile_landing_url' ) : '' ) );
+		$referrer   = $calcData['referrer'] ?? ( $input['referrer'] ?? ( $order ? $order->get_meta( '_rocktile_referrer' ) : '' ) );
 		?>
 		<div class="rocktile-admin-card">
 			<div class="rocktile-admin-card-header">
@@ -211,6 +217,10 @@ class Rocktile_Calculator_Order_Admin {
 						<span class="grid-value font-bold"><?php echo esc_html( $roofName ); ?></span>
 					</div>
 					<div class="rocktile-grid-item">
+						<span class="grid-label">Rögzítés módja:</span>
+						<span class="grid-value font-bold"><?php echo esc_html( $fasteningName ); ?></span>
+					</div>
+					<div class="rocktile-grid-item">
 						<span class="grid-label">Szellőzési mód:</span>
 						<span class="grid-value"><?php echo esc_html( $ventName ); ?></span>
 					</div>
@@ -232,6 +242,35 @@ class Rocktile_Calculator_Order_Admin {
 					</div>
 				</div>
 			</div>
+
+			<!-- Marketing / Érkezési adatok -->
+			<?php if ( ! empty( $landingUrl ) || ! empty( $referrer ) ) : ?>
+				<div class="rocktile-admin-section">
+					<h4 class="rocktile-section-title">Érkezési Adatok (Marketing forrás)</h4>
+					<div class="rocktile-admin-grid">
+						<?php if ( ! empty( $landingUrl ) ) : ?>
+							<div class="rocktile-grid-item" style="grid-column: 1 / -1;">
+								<span class="grid-label">Érkezési oldal (Landing URL):</span>
+								<span class="grid-value">
+									<a href="<?php echo esc_url( $landingUrl ); ?>" target="_blank" rel="noopener noreferrer" style="color: #0284c7; text-decoration: underline; word-break: break-all;">
+										<?php echo esc_html( $landingUrl ); ?>
+									</a>
+								</span>
+							</div>
+						<?php endif; ?>
+						<?php if ( ! empty( $referrer ) ) : ?>
+							<div class="rocktile-grid-item" style="grid-column: 1 / -1;">
+								<span class="grid-label">Hivatkozó oldal (Referrer):</span>
+								<span class="grid-value">
+									<a href="<?php echo esc_url( $referrer ); ?>" target="_blank" rel="noopener noreferrer" style="color: #64748b; text-decoration: underline; word-break: break-all;">
+										<?php echo esc_html( $referrer ); ?>
+									</a>
+								</span>
+							</div>
+						<?php endif; ?>
+					</div>
+				</div>
+			<?php endif; ?>
 
 			<!-- 2. Releváns méretek -->
 			<?php

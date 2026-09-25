@@ -26,10 +26,14 @@ class Rocktile_Calculator_Quote_Request {
 			$params = $request->get_params();
 		}
 
-		$name  = isset( $params['name'] ) ? sanitize_text_field( $params['name'] ) : '';
-		$email = isset( $params['email'] ) ? sanitize_email( $params['email'] ) : '';
-		$phone = isset( $params['phone'] ) ? sanitize_text_field( $params['phone'] ) : '';
-		$note  = isset( $params['note'] ) ? sanitize_textarea_field( $params['note'] ) : '';
+		$name       = isset( $params['name'] ) ? sanitize_text_field( $params['name'] ) : '';
+		$email      = isset( $params['email'] ) ? sanitize_email( $params['email'] ) : '';
+		$phone      = isset( $params['phone'] ) ? sanitize_text_field( $params['phone'] ) : '';
+		$note       = isset( $params['note'] ) ? sanitize_textarea_field( $params['note'] ) : '';
+		$source     = isset( $params['source'] ) ? sanitize_text_field( $params['source'] ) : '';
+		$landingUrl = isset( $params['landingUrl'] ) ? esc_url_raw( $params['landingUrl'] ) : '';
+		$referrer   = isset( $params['referrer'] ) ? esc_url_raw( $params['referrer'] ) : '';
+		$isStep3Help = ( 'step3_help_request' === $source );
 
 		if ( empty( $name ) ) {
 			return new WP_Error( 'missing_name', 'Kérjük, adja meg nevét.', array( 'status' => 400 ) );
@@ -39,7 +43,8 @@ class Rocktile_Calculator_Quote_Request {
 			return new WP_Error( 'invalid_email', 'Kérjük, adjon meg egy érvényes email címet.', array( 'status' => 400 ) );
 		}
 
-		if ( empty( $phone ) ) {
+		// A 3. lépésbeli segítségkérésnél a telefonszám opcionális, teljes ajánlatkérésnél kötelező
+		if ( ! $isStep3Help && empty( $phone ) ) {
 			return new WP_Error( 'missing_phone', 'Kérjük, adja meg telefonszámát.', array( 'status' => 400 ) );
 		}
 
@@ -53,6 +58,8 @@ class Rocktile_Calculator_Quote_Request {
 		$hasVent      = ! empty( $params['hasVentilation'] );
 		$ventCount    = isset( $params['ventilationCount'] ) ? (int) $params['ventilationCount'] : 0;
 		$vergeType    = isset( $params['vergeType'] ) ? sanitize_text_field( $params['vergeType'] ) : '';
+		$fastening    = isset( $params['fastening'] ) ? sanitize_text_field( $params['fastening'] ) : 'screw';
+		$fasteningText = ( 'nail' === $fastening ) ? 'Szegelt rögzítés (tetőre szeg, kúpozáshoz csavar)' : 'Csavaros rögzítés (EPDM alátétes színezett csavar, 25 m² / doboz)';
 
 		$items            = isset( $params['items'] ) && is_array( $params['items'] ) ? $params['items'] : array();
 		$paletteCount     = isset( $params['paletteCount'] ) ? (int) $params['paletteCount'] : 0;
@@ -105,7 +112,7 @@ class Rocktile_Calculator_Quote_Request {
 		}
 
 		$hasItems = ! empty( $items );
-		$quotePrefix = $hasItems ? 'RT-AJ-' : 'RT-REQ-';
+		$quotePrefix = $isStep3Help ? 'RT-HELP-' : ( $hasItems ? 'RT-AJ-' : 'RT-REQ-' );
 		$quoteId = $quotePrefix . strtoupper( substr( md5( uniqid( (string) time(), true ) ), 0, 6 ) );
 
 		// Tételes anyagszükséglet táblázat HTML összeállítása (ha van kalkulált lista)
@@ -196,10 +203,35 @@ class Rocktile_Calculator_Quote_Request {
 		) ) );
 		$adminRecipients = apply_filters( 'rocktile_calculator_admin_recipients', $adminRecipients );
 
-		$mailTitle = $hasItems ? 'Rocktile – Új kalkulált árajánlat megkeresés' : 'Rocktile – Új szakértői ajánlatkérés';
-		$subject   = sprintf( '[Rocktile Kalkulátor] %s: %s (%s)', $hasItems ? 'Új árajánlat' : 'Szakértői ajánlatkérés', $name, $roofName );
+		if ( $isStep3Help ) {
+			$mailTitle = 'Rocktile – Segítségkérés a méretekhez (3. lépés)';
+			$subject   = sprintf( '[Rocktile Kalkulátor] Segítségkérés a méretekhez: %s (%s)', $name, $roofName );
+		} else {
+			$mailTitle = $hasItems ? 'Rocktile – Új kalkulált árajánlat megkeresés' : 'Rocktile – Új szakértői ajánlatkérés';
+			$subject   = sprintf( '[Rocktile Kalkulátor] %s: %s (%s)', $hasItems ? 'Új árajánlat' : 'Szakértői ajánlatkérés', $name, $roofName );
+		}
 
 		$chimneyText = $hasChimney ? sprintf( 'Igen (%d db kémény, %d db síklemez)', $chimneyCount, $chimneyCount * 2 ) : 'Nincs';
+
+		// Formázzuk a marketing / érkezési adatokat
+		$landingHtml = ! empty( $landingUrl )
+			? sprintf( '<a href="%s" style="color: #0284c7; word-break: break-all;" target="_blank">%s</a>', esc_url( $landingUrl ), esc_html( $landingUrl ) )
+			: '<span style="color: #94a3b8;"><em>Közvetlen látogatás vagy nem azonosítható forrás</em></span>';
+
+		$referrerHtml = ! empty( $referrer )
+			? sprintf( '<p style="margin: 6px 0;"><strong>Hivatkozó oldal (Referrer):</strong> <a href="%s" style="color: #64748b; word-break: break-all;" target="_blank">%s</a></p>', esc_url( $referrer ), esc_html( $referrer ) )
+			: '';
+
+		$phoneHtml = ! empty( $phone )
+			? sprintf( '<a href="tel:%s" style="color: #022a50;">%s</a>', esc_attr( $phone ), esc_html( $phone ) )
+			: '<span style="color: #94a3b8;"><em>Nem adott meg telefonszámot</em></span>';
+
+		$helpBannerHtml = $isStep3Help
+			? '<div style="background: #eff6ff; border-left: 4px solid #0284c7; padding: 12px 16px; margin: 20px 25px 0 25px; border-radius: 4px;">
+				<strong style="color: #0369a1; font-size: 14px;">Segítségkérés a 3. lépésnél (Méretek felmérése)</strong>
+				<p style="margin: 4px 0 0 0; font-size: 13px; color: #1e3a8a; line-height: 1.4;">A látogató a méretek megadásánál kér segítséget. Elérhetőségeit megadta, hogy munkatársunk segítse a felmérést és az árajánlat elkészítését.</p>
+			</div>'
+			: '';
 
 		$message = sprintf(
 			'<!DOCTYPE html>
@@ -212,19 +244,26 @@ class Rocktile_Calculator_Quote_Request {
 						<p style="margin: 5px 0 0 0; font-size: 13px; color: #cbd5e1;">Azonosító: <strong>%s</strong> | Dátum: %s</p>
 					</div>
 
+					%s
+
 					<div style="padding: 25px;">
 						<h3 style="color: #022a50; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-top: 0;">Ügyfél elérhetőségei:</h3>
 						<p style="margin: 6px 0;"><strong>Név:</strong> %s</p>
 						<p style="margin: 6px 0;"><strong>Email:</strong> <a href="mailto:%s" style="color: #cf3f29;">%s</a></p>
-						<p style="margin: 6px 0;"><strong>Telefonszám:</strong> <a href="tel:%s" style="color: #022a50;">%s</a></p>
+						<p style="margin: 6px 0;"><strong>Telefonszám:</strong> %s</p>
+
+						<h3 style="color: #022a50; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-top: 25px;">Érkezési adatok (Marketing forrás):</h3>
+						<p style="margin: 6px 0;"><strong>Érkezési oldal (Landing URL):</strong> %s</p>
+						%s
 
 						<h3 style="color: #022a50; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-top: 25px;">Tető adatok:</h3>
 						<p style="margin: 6px 0;"><strong>Tetőforma:</strong> %s</p>
 						<p style="margin: 6px 0;"><strong>Termékcsalád:</strong> %s</p>
 						<p style="margin: 6px 0;"><strong>Választott szín:</strong> %s</p>
+						<p style="margin: 6px 0;"><strong>Rögzítés módja:</strong> %s</p>
 						<p style="margin: 6px 0;"><strong>Kémény:</strong> %s</p>
 						<p style="margin: 6px 0;"><strong>Szellőzés:</strong> %s</p>
-						<p style="margin: 6px 0;"><strong>Oromszegély típusa:</strong> %s</p>
+						<p style="margin: 6px 0;"><strong>Oromszegély:</strong> %s</p>
 
 						<h4 style="color: #022a50; margin-bottom: 5px; margin-top: 15px;">Megadott méretek:</h4>
 						%s
@@ -243,20 +282,23 @@ class Rocktile_Calculator_Quote_Request {
 			esc_html( $mailTitle ),
 			esc_html( $quoteId ),
 			esc_html( current_time( 'Y.m.d. H:i' ) ),
+			$helpBannerHtml,
 			esc_html( $name ),
 			esc_attr( $email ),
 			esc_html( $email ),
-			esc_attr( $phone ),
-			esc_html( $phone ),
+			$phoneHtml,
+			$landingHtml,
+			$referrerHtml,
 			esc_html( $roofName ),
 			esc_html( $productName ),
 			esc_html( $colorName ),
+			esc_html( $fasteningText ),
 			$chimneyText,
 			$hasVent ? sprintf( 'Igen (%d db)', $ventCount ) : 'Nem',
 			esc_html( $vergeText ),
 			$dimHtml,
 			$itemsTableHtml,
-			! empty( $note ) ? sprintf( '<div style="background: #fffaf6; border-left: 4px solid #cf3f29; padding: 12px 15px; margin-top: 20px;"><strong style="color: #022a50;">Ügyfél megjegyzése:</strong><p style="margin: 5px 0 0 0; font-style: italic; color: #334155;">%s</p></div>', nl2br( esc_html( $note ) ) ) : ''
+			! empty( $note ) ? sprintf( '<div style="background: #fffaf6; border-left: 4px solid #cf3f29; padding: 12px 15px; margin-top: 20px;"><strong style="color: #022a50;">Ügyfél megjegyzése / kérdése:</strong><p style="margin: 5px 0 0 0; font-style: italic; color: #334155;">%s</p></div>', nl2br( esc_html( $note ) ) ) : ''
 		);
 
 		// Feladó adatok (kalkulator@rocktile.eu)
@@ -273,7 +315,28 @@ class Rocktile_Calculator_Quote_Request {
 		wp_mail( $adminRecipients, $subject, $message, $headers );
 
 		// Visszaigazoló email az ügyfélnek
-		$clientSubject = sprintf( 'Köszönjük ajánlatkérését – Rocktile Tetőrendszerek (%s)', $quoteId );
+		if ( $isStep3Help ) {
+			$clientSubject = sprintf( 'Köszönjük megkeresését – Segítség a méretekhez – Rocktile (%s)', $quoteId );
+			$clientIntroText = sprintf(
+				'<p>Kedves <strong>%s</strong>!</p>
+				<p>Köszönjük, hogy felkereste a Rocktile online tetőkalkulátorát. Értesültünk róla, hogy szakértői segítségre van szüksége a tető pontos méreteinek megadásához és a tetőanyagok felméréséhez (Azonosító: <strong>%s</strong>).</p>
+				<p>Kollégánk hamarosan felveszi Önnel a kapcsolatot a megadott elérhetőségein (%s), hogy egyeztessen Önnel a részletekről, és segítsen a pontos árajánlat összeállításában.</p>',
+				esc_html( $name ),
+				esc_html( $quoteId ),
+				esc_html( $email . ( ! empty( $phone ) ? ' / ' . $phone : '' ) )
+			);
+		} else {
+			$clientSubject = sprintf( 'Köszönjük ajánlatkérését – Rocktile Tetőrendszerek (%s)', $quoteId );
+			$clientIntroText = sprintf(
+				'<p>Kedves <strong>%s</strong>!</p>
+				<p>Köszönjük, hogy a Rocktile online tetőkalkulátorát használta. Árajánlatát és megkeresését sikeresen továbbítottuk munkatársainknak (Azonosító: <strong>%s</strong>).</p>
+				<p>Kollégánk hamarosan felveszi Önnel a kapcsolatot a megadott elérhetőségein (%s) az árajánlat részleteivel és a szállítással kapcsolatban.</p>',
+				esc_html( $name ),
+				esc_html( $quoteId ),
+				esc_html( $email . ( ! empty( $phone ) ? ' / ' . $phone : '' ) )
+			);
+		}
+
 		$clientMessage = sprintf(
 			'<!DOCTYPE html>
 			<html>
@@ -282,13 +345,11 @@ class Rocktile_Calculator_Quote_Request {
 				<div style="max-width: 650px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden;">
 					<div style="background: #022a50; color: #ffffff; padding: 20px 25px;">
 						<h2 style="margin: 0; font-size: 20px;">Rocktile Tetőrendszerek</h2>
-						<p style="margin: 5px 0 0 0; font-size: 13px; color: #cbd5e1;">Árajánlat visszaigazolása</p>
+						<p style="margin: 5px 0 0 0; font-size: 13px; color: #cbd5e1;">%s</p>
 					</div>
 
 					<div style="padding: 25px;">
-						<p>Kedves <strong>%s</strong>!</p>
-						<p>Köszönjük, hogy a Rocktile online tetőkalkulátorát használta. Árajánlatát és megkeresését sikeresen továbbítottuk munkatársainknak (Azonosító: <strong>%s</strong>).</p>
-						<p>Kollégánk hamarosan felveszi Önnel a kapcsolatot a megadott elérhetőségein (%s) az árajánlat részleteivel és a szállítással kapcsolatban.</p>
+						%s
 
 						<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 15px; margin: 20px 0;">
 							<h4 style="margin: 0 0 10px 0; color: #022a50;">Kiválasztott tető paraméterek:</h4>
@@ -305,9 +366,8 @@ class Rocktile_Calculator_Quote_Request {
 				</div>
 			</body>
 			</html>',
-			esc_html( $name ),
-			esc_html( $quoteId ),
-			esc_html( $email . ( ! empty( $phone ) ? ' / ' . $phone : '' ) ),
+			esc_html( $isStep3Help ? 'Segítségkérés visszaigazolása' : 'Árajánlat visszaigazolása' ),
+			$clientIntroText,
 			esc_html( $roofName ),
 			esc_html( $productName ),
 			esc_html( $colorName ),
@@ -332,11 +392,15 @@ class Rocktile_Calculator_Quote_Request {
 		 */
 		do_action( 'rocktile_quote_request_submitted', $params, $quoteId );
 
+		$respMessage = $isStep3Help
+			? 'Segítségkérését sikeresen elküldtük kollégáinknak! Munkatársunk hamarosan felveszi Önnel a kapcsolatot.'
+			: 'Ajánlatkérését sikeresen elküldtük kollégáinknak! Munkatársunk hamarosan felveszi Önnel a kapcsolatot.';
+
 		return new WP_REST_Response(
 			array(
 				'success' => true,
 				'quoteId' => $quoteId,
-				'message' => 'Ajánlatkérését sikeresen elküldtük kollégáinknak! Munkatársunk hamarosan felveszi Önnel a kapcsolatot.',
+				'message' => $respMessage,
 			),
 			200
 		);
