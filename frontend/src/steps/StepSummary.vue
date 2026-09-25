@@ -342,6 +342,11 @@ async function sendExpertReviewRequest() {
       chimneyCount:     state.hasChimney ? (state.chimneyCount || 1) : 0,
       fastening:        state.fastening,
       vergeType:        state.vergeType || 'over-cover',
+      source:           'calculator_review_request',
+      label:            'ROCKTILE - KALKULÁTOR',
+      tag:              'ROCKTILE - KALKULÁTOR',
+      deal_label:       'ROCKTILE - KALKULÁTOR',
+      pipedrive_label:  'ROCKTILE - KALKULÁTOR',
       landingUrl:       state.landingUrl,
       referrer:         state.referrerUrl,
     };
@@ -442,6 +447,11 @@ async function submitSendQuoteToStaff() {
       paletteFeeTotal:  paletteFeeTotal.value,
       shippingFeeTotal: shippingFeeTotal.value,
       grandTotal:       grandTotal.value,
+      source:           'calculator_quote_submission',
+      label:            'ROCKTILE - KALKULÁTOR',
+      tag:              'ROCKTILE - KALKULÁTOR',
+      deal_label:       'ROCKTILE - KALKULÁTOR',
+      pipedrive_label:  'ROCKTILE - KALKULÁTOR',
       landingUrl:       state.landingUrl,
       referrer:         state.referrerUrl,
     };
