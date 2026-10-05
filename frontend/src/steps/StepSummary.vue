@@ -636,7 +636,6 @@ onMounted(() => {
     <div class="rc-step-header">
       <span class="rc-step-badge">Összesítés</span>
       <h2 class="rc-step-heading">Kalkuláció eredménye</h2>
-      <p class="rc-step-subheading">A megadott adatok alapján a szerver által kiszámított anyagszükséglet és árajánlat.</p>
     </div>
 
     <!-- ══════════════════════════════
@@ -646,7 +645,7 @@ onMounted(() => {
       <div class="flex items-center justify-between border-b border-cream bg-warm-white px-5 py-3.5">
         <span class="font-heading text-[13px] font-bold tracking-[0.5px] text-navy uppercase">Megadott tetőadatok</span>
         <div class="flex gap-2">
-          <button type="button" class="rc-edit-btn cursor-pointer transition-colors hover:bg-brick/8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brick" @click="goToStep(1)" aria-label="Termék és szín módosítása">
+          <button type="button" class="rc-edit-btn cursor-pointer transition-colors hover:bg-brick/8 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brick" @click="goToStep(1)" aria-label="Adatok módosítása">
             Módosítás
           </button>
         </div>
@@ -930,34 +929,34 @@ onMounted(() => {
         </ul>
 
         <!-- Költségbontás sáv (Anyagok, Raklap díj, Szállítás a végösszeg elé) -->
-        <div class="border-t border-cream bg-slate-50/90 px-5 py-4 flex flex-col gap-2.5">
-          <div class="flex items-center justify-between font-sans text-xs text-muted">
+        <div class="border-t border-cream bg-slate-50/90 px-4 sm:px-5 py-4 flex flex-col gap-2.5">
+          <div class="flex items-center justify-between font-sans text-xs text-muted max-sm:flex-col max-sm:items-start max-sm:gap-0.5">
             <span>Anyagok részösszege (bruttó, 27% áfával):</span>
             <strong class="font-heading text-sm text-navy">{{ currentTotalFormatted }}</strong>
           </div>
-          <div class="flex items-center justify-between font-sans text-xs text-muted">
+          <div class="flex items-center justify-between font-sans text-xs text-muted max-sm:flex-col max-sm:items-start max-sm:gap-0.5">
             <div class="flex flex-col">
               <span>Raklap díj ({{ paletteCount }} db raklap):</span>
               <span class="text-[10px] text-slate-400">br. 3 810 Ft / raklap (Tetőfelület: {{ roofArea }} m² alapján)</span>
             </div>
-            <strong class="font-heading text-sm text-navy">{{ formatHuf(paletteFeeTotal) }}</strong>
+            <strong class="font-heading text-sm text-navy max-sm:mt-0.5">{{ formatHuf(paletteFeeTotal) }}</strong>
           </div>
-          <div class="flex items-center justify-between font-sans text-xs text-muted">
+          <div class="flex items-center justify-between font-sans text-xs text-muted max-sm:flex-col max-sm:items-start max-sm:gap-0.5">
             <div class="flex flex-col">
               <span>Várható házhozszállítási díj ({{ paletteCount }} raklap):</span>
               <span class="text-[10px] text-slate-400">br. 38 100 Ft / raklap</span>
             </div>
-            <strong class="font-heading text-sm text-navy">{{ formatHuf(shippingFeeTotal) }}</strong>
+            <strong class="font-heading text-sm text-navy max-sm:mt-0.5">{{ formatHuf(shippingFeeTotal) }}</strong>
           </div>
         </div>
 
-        <!-- Végösszeg sáv -->
-        <div class="flex items-center justify-between border-t-2 border-navy bg-warm-white px-5 py-4.5">
+        <!-- Végösszeg sáv (mobilon egymás alá rendezve) -->
+        <div class="flex items-center justify-between border-t-2 border-navy bg-warm-white px-4 sm:px-5 py-4.5 max-sm:flex-col max-sm:items-start max-sm:gap-2">
           <div>
             <span class="block font-heading text-sm font-bold tracking-[0.5px] text-navy uppercase">Ajánlat végösszege (bruttó)</span>
             <span class="font-sans text-xs text-slate-500">Anyagok + Raklap díj + Házhozszállítás (27% ÁFÁ-val)</span>
           </div>
-          <strong class="font-heading text-2xl sm:text-3xl font-extrabold text-navy">{{ grandTotalFormatted }}</strong>
+          <strong class="font-heading text-2xl sm:text-3xl font-extrabold text-navy max-sm:mt-1">{{ grandTotalFormatted }}</strong>
         </div>
       </div>
     </div>
@@ -1223,17 +1222,25 @@ onMounted(() => {
       >
         <div class="rocktile-modal-box relative flex w-full max-w-lg flex-col gap-5 border-2 border-navy bg-white p-6 shadow-2xl rounded-none max-h-[90vh] overflow-y-auto">
           <div class="flex items-start justify-between gap-4 border-b border-cream pb-3">
-            <div>
-              <h3 id="send-quote-title" class="m-0 font-heading text-lg font-bold text-navy">
-                Ajánlat beküldése kollégáinknak
-              </h3>
-              <p class="mt-1 mb-0 font-sans text-xs text-muted leading-relaxed">
-                Nem szeretne most azonnal vásárolni? Küldje be a kalkulációt, és munkatársaink hamarosan felveszik Önnel a kapcsolatot!
-              </p>
+            <div class="flex items-center gap-3">
+              <div class="flex size-9 shrink-0 items-center justify-center rounded-sm bg-[#022a50] text-[#17d5ce]" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-5">
+                  <path d="M10 14l11 -11"></path>
+                  <path d="M21 3l-6.5 18a.55 .55 0 0 1 -1 0l-3.5 -7l-7 -3.5a.55 .55 0 0 1 0 -1l18 -6.5"></path>
+                </svg>
+              </div>
+              <div>
+                <h3 id="send-quote-title" class="m-0 font-heading text-lg font-bold text-navy">
+                  Ajánlat beküldése kollégáinknak
+                </h3>
+                <p class="mt-0.5 mb-0 font-sans text-xs text-muted leading-relaxed">
+                  Nem szeretne most azonnal vásárolni? Küldje be a kalkulációt, és munkatársaink hamarosan felveszik Önnel a kapcsolatot!
+                </p>
+              </div>
             </div>
             <button
               type="button"
-              class="rc-modal-close"
+              class="rc-modal-close shrink-0"
               @click="closeSendQuoteModal"
               aria-label="Bezárás"
             >
@@ -1326,22 +1333,23 @@ onMounted(() => {
               ></textarea>
             </div>
 
-            <div class="mt-2 flex items-center justify-end gap-3 border-t border-cream pt-4">
-              <button
-                type="button"
-                class="rc-modal-btn rc-modal-btn-secondary"
-                @click="closeSendQuoteModal"
-                :disabled="sendQuoteLoading"
-              >
-                Mégse
-              </button>
+            <!-- Gombok egymás alá rendezve -->
+            <div class="mt-2 flex flex-col gap-2.5 border-t border-cream pt-4 w-full">
               <button
                 type="submit"
-                class="rc-modal-btn rc-modal-btn-primary"
+                class="rc-modal-btn rc-modal-btn-primary w-full"
                 :disabled="sendQuoteLoading"
               >
                 <span v-if="sendQuoteLoading" class="rc-spinner size-3.5 shrink-0 rounded-full border-2 border-white/35 border-t-white" aria-hidden="true"></span>
                 <span>{{ sendQuoteLoading ? 'Beküldés...' : 'Ajánlat beküldése' }}</span>
+              </button>
+              <button
+                type="button"
+                class="rc-modal-btn rc-modal-btn-secondary w-full"
+                @click="closeSendQuoteModal"
+                :disabled="sendQuoteLoading"
+              >
+                Mégse
               </button>
             </div>
           </form>

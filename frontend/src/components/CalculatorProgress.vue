@@ -5,12 +5,12 @@ import { useCalculator } from '../composables/useCalculator.js';
 const { state, goToStep } = useCalculator();
 
 const allSteps = [
-  { step: 1, title: 'Termék & Szín',  shortTitle: 'Termék',     icon: '🏠' },
-  { step: 2, title: 'Tetőforma',       shortTitle: 'Tetőforma',  icon: '⬡' },
-  { step: 3, title: 'Méretek',         shortTitle: 'Méretek',    icon: '📐' },
-  { step: 4, title: 'Szellőzés',       shortTitle: 'Szellőzés',  icon: '💨' },
-  { step: 5, title: 'Rögzítés',        shortTitle: 'Rögzítés',   icon: '🔩' },
-  { step: 6, title: 'Összesítés',      shortTitle: 'Összesítés', icon: '✅' },
+  { step: 1, title: 'Tetőforma',      shortTitle: 'Tetőforma' },
+  { step: 2, title: 'Méretek',        shortTitle: 'Méretek' },
+  { step: 3, title: 'Termék & Szín', shortTitle: 'Termék' },
+  { step: 4, title: 'Szellőzés',      shortTitle: 'Szellőzés' },
+  { step: 5, title: 'Rögzítés',       shortTitle: 'Rögzítés' },
+  { step: 6, title: 'Összesítés',     shortTitle: 'Összesítés' },
 ];
 
 const visibleSteps = computed(() => allSteps);

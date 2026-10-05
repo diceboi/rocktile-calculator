@@ -37,10 +37,10 @@ watch(
 
 <template>
   <div
-    class="rocktile-calculator-ui flex w-full items-start justify-center px-4 pt-8 pb-12 font-sans text-navy-dark max-sm:px-3 max-sm:pt-4 max-sm:pb-8"
+    class="rocktile-calculator-ui w-full font-sans text-navy-dark"
   >
     <div
-      class="w-full max-w-[1100px] border border-line bg-white px-11 py-10 max-[900px]:px-6 max-[900px]:py-7 max-sm:px-4 max-sm:py-5"
+      class="w-full max-w-[1100px] mx-auto bg-white"
     >
 
       <!-- Folyamatjelző -->
@@ -52,11 +52,11 @@ watch(
           <component
             :is="
               state.currentStep === 1
-                ? StepProduct
+                ? StepRoofType
                 : state.currentStep === 2
-                  ? StepRoofType
+                  ? StepDimensions
                   : state.currentStep === 3
-                    ? StepDimensions
+                    ? StepProduct
                     : state.currentStep === 4
                       ? StepVentilation
                       : state.currentStep === 5

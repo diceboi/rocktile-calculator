@@ -132,8 +132,9 @@ class Rocktile_Calculator_Assets {
 			return;
 		}
 
-		$entry    = $manifest[ self::ENTRY_FILE ];
-		$dist_url = ROCKTILE_CALCULATOR_URL . 'dist/';
+		$entry         = $manifest[ self::ENTRY_FILE ];
+		$dist_url      = ROCKTILE_CALCULATOR_URL . 'dist/';
+		$asset_version = file_exists( $manifest_path ) ? (string) filemtime( $manifest_path ) : ROCKTILE_CALCULATOR_VERSION;
 
 		// Enqueue JS entry point
 		if ( ! empty( $entry['file'] ) ) {
@@ -143,7 +144,7 @@ class Rocktile_Calculator_Assets {
 				'rocktile-calculator-app',
 				$js_url,
 				array(),
-				ROCKTILE_CALCULATOR_VERSION,
+				$asset_version,
 				true
 			);
 		}
@@ -155,7 +156,7 @@ class Rocktile_Calculator_Assets {
 					'rocktile-calculator-style-' . $index,
 					$dist_url . $css_file,
 					array(),
-					ROCKTILE_CALCULATOR_VERSION
+					$asset_version
 				);
 			}
 		}

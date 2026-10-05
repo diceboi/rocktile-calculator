@@ -10,9 +10,8 @@ const { state, selectedRoofGroup, selectRoofType, selectRoofSubtype } = useCalcu
   <div class="flex flex-col gap-7">
     <!-- Step header -->
     <div class="rc-step-header">
-      <span class="rc-step-badge">2. lépés</span>
+      <span class="rc-step-badge">1. lépés</span>
       <h2 class="rc-step-heading">Válassza ki a tetőformát</h2>
-      <p class="rc-step-subheading">Válassza ki ingatlana fő tetőszerkezetét, majd – ha szükséges – a megfelelő geometriai altípust.</p>
     </div>
 
     <!-- Fő tetőtípusok -->
@@ -45,7 +44,7 @@ const { state, selectedRoofGroup, selectRoofType, selectRoofSubtype } = useCalcu
           </h3>
         </div>
 
-        <div class="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-3.5 max-[480px]:grid-cols-1 max-[480px]:gap-2.5">
+        <div class="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-3.5 max-[480px]:grid-cols-2 max-[480px]:gap-2.5">
           <OptionCard
             v-for="subtype in selectedRoofGroup.subtypes"
             :key="subtype.id"

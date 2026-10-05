@@ -265,24 +265,52 @@ function handleCloseHelpModal() {
   <div class="flex flex-col gap-7">
     <!-- Step header -->
     <div class="rc-step-header">
-      <span class="rc-step-badge">3. lépés</span>
+      <span class="rc-step-badge">2. lépés</span>
       <h2 class="rc-step-heading">Adja meg a tető méreteit</h2>
-      <p class="rc-step-subheading">
-        A(z) <strong>{{ selectedRoofConfig?.name }}</strong> tetőformához szükséges adatok.
-        Kérjük, adja meg a méreteket méterben (fm = folyóméter), a felületet pedig négyzetméterben (m²).
-      </p>
     </div>
 
-    <!-- Sárgás tájékoztató Egyedi tetőforma esetén -->
-    <div v-if="isCustomRoof" class="flex items-start gap-3.5 border border-amber-300 bg-amber-50/90 p-4 rounded-sm">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="size-5 shrink-0 text-amber-800 mt-0.5" aria-hidden="true">
-        <circle cx="12" cy="12" r="10"></circle>
-        <line x1="12" y1="8" x2="12" y2="12"></line>
-        <line x1="12" y1="16" x2="12.01" y2="16"></line>
-      </svg>
+    <!-- Segítségkérő kártya felül, lerövidített szöveggel -->
+    <div class="rc-help-card flex flex-col items-start gap-3.5">
+      <div class="flex size-9 shrink-0 items-center justify-center rounded-sm bg-[#022a50] text-[#17d5ce]" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-5">
+          <circle cx="12" cy="12" r="9"></circle>
+          <circle cx="12" cy="12" r="4"></circle>
+          <line x1="4.93" y1="4.93" x2="9.17" y2="9.17"></line>
+          <line x1="14.83" y1="9.17" x2="19.07" y2="4.93"></line>
+          <line x1="14.83" y1="14.83" x2="19.07" y2="19.07"></line>
+          <line x1="4.93" y1="19.07" x2="9.17" y2="14.83"></line>
+        </svg>
+      </div>
+      <div class="flex flex-col gap-0.5 w-full text-left">
+        <strong class="font-heading text-sm sm:text-base font-bold text-navy">
+          Nem tudja a pontos méreteket? Segítünk!
+        </strong>
+        <p class="m-0 font-sans text-xs leading-relaxed text-slate-700">
+          Nem szükséges pontos adatokat tudnia. Szakértőnk díjmentesen felveszi Önnel a kapcsolatot a méretek pontosításához és az árajánlathoz.
+        </p>
+      </div>
+
+      <button
+        type="button"
+        class="rc-help-card-btn self-start sm:self-auto"
+        @click="openStep3Help"
+      >
+        Segítséget kérek
+      </button>
+    </div>
+
+    <!-- Tájékoztató Egyedi tetőforma esetén -->
+    <div v-if="isCustomRoof" class="rc-info-block">
+      <div class="rc-info-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="size-4" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+      </div>
       <div class="flex flex-col gap-1">
-        <strong class="font-heading text-sm font-bold text-amber-950">Egyedi tetőforma méretmegadása</strong>
-        <p class="m-0 font-sans text-xs leading-relaxed text-amber-900">
+        <strong class="font-heading text-sm font-bold text-navy">Egyedi tetőforma méretmegadása</strong>
+        <p class="m-0 font-sans text-xs leading-relaxed text-slate-700">
           Kérjük, adja meg a tetőfelületet és az ismert méreteket. Azoknál a mezőknél, amelyek az Ön tetőszerkezeténél nem fordulnak elő, <strong>nyugodtan hagyja az értéket 0-án vagy kitöltetlenül</strong>.
         </p>
       </div>
@@ -375,9 +403,9 @@ function handleCloseHelpModal() {
     <!-- ══════════════════════════════
          KÉMÉNY KÉRDÉS
     ══════════════════════════════ -->
-    <div class="flex flex-col gap-3 border-2 border-slate-300 bg-white p-5">
-      <div class="flex items-center justify-between gap-3 max-sm:flex-col max-sm:items-start">
-        <div class="flex flex-col gap-1">
+    <div class="flex flex-col gap-4 border-2 border-slate-300 bg-white p-4 sm:p-5">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 items-start">
+        <div class="flex flex-col gap-1 text-left">
           <div class="flex items-center gap-2">
             <span class="font-heading text-sm font-bold text-navy uppercase tracking-wider">Kémény</span>
             <span class="bg-navy/8 px-2 py-0.5 font-sans text-xs font-semibold text-navy">Opcionális</span>
@@ -388,35 +416,41 @@ function handleCloseHelpModal() {
           </p>
         </div>
 
-        <div class="flex lg:flex-row flex-col items-center gap-2">
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto self-start sm:self-auto">
           <button
             type="button"
-            class="rc-choice-btn"
+            class="rc-choice-btn w-full sm:w-auto flex items-center gap-2 justify-start sm:justify-center text-left sm:text-center"
             :class="{ 'rc-choice-active-navy': !state.hasChimney }"
             @click="setHasChimney(false)"
           >
-            Nincs kémény
+            <svg v-if="!state.hasChimney" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="size-4 shrink-0" aria-hidden="true">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            <span>Nincs kémény</span>
           </button>
           <button
             type="button"
-            class="rc-choice-btn"
+            class="rc-choice-btn w-full sm:w-auto flex items-center gap-2 justify-start sm:justify-center text-left sm:text-center"
             :class="{ 'rc-choice-active-brick': state.hasChimney }"
             @click="setHasChimney(true)"
           >
-            Igen, van kémény
+            <svg v-if="state.hasChimney" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="size-4 shrink-0" aria-hidden="true">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            <span>Igen, van kémény</span>
           </button>
         </div>
       </div>
 
       <!-- Kémény darabszám beállítása ha van kémény -->
       <div v-if="state.hasChimney" class="flex flex-col gap-3 border-t border-slate-200 pt-3">
-        <div class="flex items-center justify-between gap-4 max-sm:flex-col max-sm:items-start">
-          <div class="flex flex-col gap-0.5">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 items-start">
+          <div class="flex flex-col gap-0.5 text-left">
             <span class="font-heading text-sm font-bold text-navy">Kémények száma:</span>
             <span class="font-sans text-xs text-muted">Adja meg a tetőn található kémények darabszámát</span>
           </div>
 
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 self-start sm:self-auto">
             <div class="inline-flex items-center border border-slate-300 bg-warm-white">
               <button
                 type="button"
@@ -454,33 +488,6 @@ function handleCloseHelpModal() {
     </div>
 
     <!-- ══════════════════════════════════════════════════════
-         BIZONYTALAN VÁSÁRLÓ MENTŐÖV / KILÉPÉSI PONT KÁRTYA
-    ══════════════════════════════════════════════════════ -->
-    <div class="rc-help-card">
-      <div class="flex items-start gap-3.5">
-        <div class="flex size-10 shrink-0 items-center justify-center rounded-full bg-amber-200/90 text-amber-950 font-bold text-lg">
-          🆘
-        </div>
-        <div class="flex flex-col gap-1">
-          <strong class="font-heading text-sm font-bold text-amber-950">
-            Nem tudja a pontos méreteket? Segítünk a felmérésben!
-          </strong>
-          <p class="m-0 font-sans text-xs leading-relaxed text-amber-900">
-            Nem szükséges azonnal milliméterre pontos adatokat tudnia. Adja meg elérhetőségeit, és szakértő munkatársunk díjmentesen felveszi Önnel a kapcsolatot a méretek pontosításához és az árajánlat elkészítéséhez.
-          </p>
-        </div>
-      </div>
-
-      <button
-        type="button"
-        class="rc-help-card-btn max-md:w-full"
-        @click="openStep3Help"
-      >
-        Segítséget kérek a méretekhez
-      </button>
-    </div>
-
-    <!-- ══════════════════════════════════════════════════════
          SEGÍTSÉGKÉRŐ MODAL (FELUGRÓ ABLAK)
     ══════════════════════════════════════════════════════ -->
     <transition name="rc-modal">
@@ -508,8 +515,8 @@ function handleCloseHelpModal() {
 
           <!-- Sikeres beküldés képernyő -->
           <div v-if="helpSuccess" class="flex flex-col items-center gap-4 text-center py-4">
-            <div class="flex size-14 items-center justify-center rounded-full bg-green-100 text-green-700">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="size-7">
+            <div class="flex size-12 items-center justify-center rounded-sm bg-[#022a50] text-[#17d5ce]" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="size-6">
                 <polyline points="20 6 9 17 4 12"></polyline>
               </svg>
             </div>
@@ -519,7 +526,7 @@ function handleCloseHelpModal() {
             </p>
             <button
               type="button"
-              class="rc-modal-btn rc-modal-btn-primary mt-3 cursor-pointer"
+              class="rc-modal-btn rc-modal-btn-primary mt-3 cursor-pointer w-full sm:w-auto"
               @click="handleCloseHelpModal"
             >
               Rendben, bezárás
@@ -529,8 +536,15 @@ function handleCloseHelpModal() {
           <!-- Űrlap kitöltés -->
           <form v-else @submit.prevent="submitStep3Help" class="flex flex-col gap-4">
             <div class="flex items-center gap-3">
-              <div class="flex size-10 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-800 font-bold text-lg">
-                📋
+              <div class="flex size-9 shrink-0 items-center justify-center rounded-sm bg-[#022a50] text-[#17d5ce]" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-5">
+                  <circle cx="12" cy="12" r="9"></circle>
+                  <circle cx="12" cy="12" r="4"></circle>
+                  <line x1="4.93" y1="4.93" x2="9.17" y2="9.17"></line>
+                  <line x1="14.83" y1="9.17" x2="19.07" y2="4.93"></line>
+                  <line x1="14.83" y1="14.83" x2="19.07" y2="19.07"></line>
+                  <line x1="4.93" y1="19.07" x2="9.17" y2="14.83"></line>
+                </svg>
               </div>
               <div>
                 <span class="font-sans text-xs font-bold text-brick uppercase tracking-wider">Díjmentes segítség</span>
@@ -615,22 +629,23 @@ function handleCloseHelpModal() {
               </div>
             </div>
 
-            <div class="mt-2 flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
-              <button
-                type="button"
-                class="rc-modal-btn rc-modal-btn-secondary cursor-pointer"
-                @click="handleCloseHelpModal"
-                :disabled="helpLoading"
-              >
-                Mégse
-              </button>
+            <!-- Gombok egymás alá rendezve -->
+            <div class="mt-3 flex flex-col gap-2.5 pt-3 border-t border-slate-100 w-full">
               <button
                 type="submit"
-                class="rc-modal-btn rc-modal-btn-primary cursor-pointer font-bold"
+                class="rc-modal-btn rc-modal-btn-primary cursor-pointer font-bold w-full"
                 :disabled="helpLoading"
               >
                 <span v-if="helpLoading">Küldés folyamatban...</span>
                 <span v-else>Segítségkérés elküldése</span>
+              </button>
+              <button
+                type="button"
+                class="rc-modal-btn rc-modal-btn-secondary cursor-pointer w-full"
+                @click="handleCloseHelpModal"
+                :disabled="helpLoading"
+              >
+                Mégse
               </button>
             </div>
           </form>
@@ -666,9 +681,13 @@ function handleCloseHelpModal() {
 
           <!-- Fejléc -->
           <div class="flex items-center gap-3 border-b border-slate-200 pb-3.5 pr-8">
-            <span class="flex size-9 shrink-0 items-center justify-center rounded-full bg-navy text-white font-extrabold text-base">
-              ?
-            </span>
+            <div class="flex size-9 shrink-0 items-center justify-center rounded-sm bg-[#022a50] text-[#17d5ce]" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="size-5">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+              </svg>
+            </div>
             <div class="flex flex-col">
               <span class="font-sans text-xs font-bold text-muted uppercase tracking-wider">Mérési segítség egyszerűen</span>
               <h3 id="measurement-modal-title" class="m-0 font-heading text-lg font-bold text-navy">
@@ -692,7 +711,10 @@ function handleCloseHelpModal() {
               <strong class="text-xs uppercase tracking-wide text-navy font-bold">2. Hogyan mérd le egyszerűen (lépésekkel)?</strong>
               <div class="bg-blue-50 border-2 border-blue-200 p-3.5 text-blue-950 text-xs sm:text-sm leading-relaxed">
                 <div class="flex items-center gap-1.5 font-bold text-blue-900 mb-1">
-                  <span>🚶</span>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="size-4 shrink-0 text-blue-900" aria-hidden="true">
+                    <path d="M13 4v6m-4 -6v6m-4 -6v6m16 -6v6"></path>
+                    <rect x="3" y="10" width="18" height="6" rx="1"></rect>
+                  </svg>
                   <span>Praktikus mérési trükk:</span>
                 </div>
                 <p class="m-0">
@@ -704,8 +726,13 @@ function handleCloseHelpModal() {
             <!-- 3. Számolási példa -->
             <div v-if="currentMeasurementTip?.example" class="flex flex-col gap-1">
               <strong class="text-xs uppercase tracking-wide text-navy font-bold">3. Konkrét példa a számoláshoz:</strong>
-              <div class="bg-amber-50 border border-amber-200 p-3 text-amber-950 text-xs sm:text-sm">
-                💡 {{ currentMeasurementTip?.example }}
+              <div class="bg-amber-50 border border-amber-200 p-3 text-amber-950 text-xs sm:text-sm flex items-start gap-2">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="size-4 shrink-0 text-amber-700 mt-0.5" aria-hidden="true">
+                  <path d="M9 18h6"></path>
+                  <path d="M10 22h4"></path>
+                  <path d="M12 2a7 7 0 0 0-7 7c0 2.5 1.5 4.5 3 6h8c1.5-1.5 3-3.5 3-6a7 7 0 0 0-7-7z"></path>
+                </svg>
+                <span>{{ currentMeasurementTip?.example }}</span>
               </div>
             </div>
           </div>

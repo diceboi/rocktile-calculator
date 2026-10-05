@@ -37,8 +37,8 @@ function getInitialReferrer() {
 const state = reactive({
   currentStep: 1,
 
-  product: null,      // termék ID
-  color: null,        // szín ID
+  product: 'classic-bond', // alapértelmezett termék ID
+  color: null,             // szín ID
 
   roofType: null,     // fő tetőforma ID (pl. 'gable')
   roofSubtype: null,  // altípus ID (pl. 'gable-simple')
@@ -74,8 +74,9 @@ const state = reactive({
 export function useCalculator() {
   // Kiválasztott termék objektum
   const selectedProduct = computed(() => {
-    if (!state.product) return null;
-    return products.find((p) => p.id === state.product) || null;
+    const productId = state.product || products[0]?.id;
+    if (!productId) return null;
+    return products.find((p) => p.id === productId) || null;
   });
 
   // Kiválasztott szín objektum
@@ -260,10 +261,6 @@ export function useCalculator() {
   const canProceed = computed(() => {
     switch (state.currentStep) {
       case 1:
-        // Termék és szín kötelező
-        return Boolean(state.product && state.color);
-
-      case 2:
         // Tetőforma (és ha van altípus, az altípus) kötelező
         if (!state.roofType) return false;
         if (selectedRoofGroup.value?.subtypes?.length > 0 && !state.roofSubtype) {
@@ -271,7 +268,7 @@ export function useCalculator() {
         }
         return true;
 
-      case 3:
+      case 2:
         // Tetőfelület kötelezően > 0, minden egyéb aktív méretmező >= 0 érvényes
         if (!activeFieldKeys.value.length) return false;
         const roofAreaVal = state.dimensions.roofArea;
@@ -283,6 +280,10 @@ export function useCalculator() {
           const val = state.dimensions[key];
           return typeof val === 'number' && !isNaN(val) && val >= 0;
         });
+
+      case 3:
+        // Termék és szín kötelező
+        return Boolean(state.product && state.color);
 
       case 4:
         // Szellőzés opcionális, mindig tovább lehet lépni

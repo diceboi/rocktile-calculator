@@ -35,7 +35,9 @@ class Rocktile_Calculator_Quote_Request {
 		$referrer   = isset( $params['referrer'] ) ? esc_url_raw( $params['referrer'] ) : '';
 		$isStep3Help = (
 			'step3_help_request' === $source
+			|| 'step2_help_request' === $source
 			|| ! empty( $params['isStep3Help'] )
+			|| ! empty( $params['isStep2Help'] )
 			|| ( isset( $params['label'] ) && false !== stripos( $params['label'], 'seg' ) )
 			|| ( isset( $params['tag'] ) && false !== stripos( $params['tag'], 'seg' ) )
 		);
@@ -126,7 +128,7 @@ class Rocktile_Calculator_Quote_Request {
 		// Összeállítjuk a Pipedrive / CRM / Megjegyzés szöveges összefoglalót az összes kitöltött adattal
 		$summaryLines = array();
 		if ( $isStep3Help ) {
-			$summaryLines[] = "=== [CÍMKE: ROCKTILE - SEGÍTSÉG] SEGÍTSÉGKÉRÉS A MÉRETEKHEZ (3. LÉPÉS) ===";
+			$summaryLines[] = "=== [CÍMKE: ROCKTILE - SEGÍTSÉG] SEGÍTSÉGKÉRÉS A MÉRETEKHEZ ===";
 			$summaryLines[] = "Pipedrive Címke: ROCKTILE - SEGÍTSÉG";
 		} else {
 			$summaryLines[] = "=== [CÍMKE: ROCKTILE - KALKULÁTOR] ROCKTILE TETŐKALKULÁCIÓ ÉS ÁRAJÁNLAT ADATOK ===";
@@ -297,7 +299,7 @@ class Rocktile_Calculator_Quote_Request {
 		$adminRecipients = apply_filters( 'rocktile_calculator_admin_recipients', $adminRecipients );
 
 		if ( $isStep3Help ) {
-			$mailTitle = 'Rocktile – Segítségkérés a méretekhez (3. lépés)';
+			$mailTitle = 'Rocktile – Segítségkérés a méretekhez';
 			$subject   = sprintf( '[Rocktile Kalkulátor] [ROCKTILE - SEGÍTSÉG] Segítségkérés a méretekhez: %s (%s)', $name, $roofName );
 		} else {
 			$mailTitle = $hasItems ? 'Rocktile – Új kalkulált árajánlat megkeresés' : 'Rocktile – Új szakértői ajánlatkérés';
@@ -319,7 +321,7 @@ class Rocktile_Calculator_Quote_Request {
 
 		$helpBannerHtml = $isStep3Help
 			? '<div style="background: #eff6ff; border-left: 4px solid #dc2626; padding: 12px 16px; margin: 20px 25px 0 25px; border-radius: 4px;">
-				<strong style="color: #b91c1c; font-size: 14px;">Segítségkérés a 3. lépésnél (Méretek felmérése)</strong>
+				<strong style="color: #b91c1c; font-size: 14px;">Segítségkérés a méretek felméréséhez</strong>
 				<p style="margin: 4px 0 0 0; font-size: 13px; color: #1e3a8a; line-height: 1.4;">A látogató a méretek megadásánál kér segítséget. Elérhetőségeit megadta, hogy munkatársunk segítse a felmérést és az árajánlat elkészítését.</p>
 				<p style="margin: 8px 0 0 0; font-size: 12px; color: #b91c1c;"><strong>Pipedrive Címke:</strong> <span style="background: #dc2626; color: #ffffff; font-weight: bold; padding: 3px 8px; border-radius: 3px;">ROCKTILE - SEGÍTSÉG</span></p>
 			</div>'

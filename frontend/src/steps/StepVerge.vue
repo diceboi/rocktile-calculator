@@ -40,9 +40,6 @@ const vergeDetails = {
     <div class="rc-step-header">
       <span class="rc-step-badge">5. lépés</span>
       <h2 class="rc-step-heading">Oromszegély típusa</h2>
-      <p class="rc-step-subheading">
-        A kiválasztott tetőforma oromzattal rendelkezik. Válassza ki, hogy az oromszegély alulról vagy felülről takarja-e a cserepet.
-      </p>
     </div>
 
     <!-- Nagy kártyák -->
