@@ -10,7 +10,7 @@ const { state, selectedRoofGroup, selectRoofType, selectRoofSubtype } = useCalcu
   <div class="flex flex-col gap-7">
     <!-- Step header -->
     <div class="rc-step-header">
-      <span class="rc-step-badge">1. lépés</span>
+      <span class="rc-step-badge">2. lépés</span>
       <h2 class="rc-step-heading">Válassza ki a tetőformát</h2>
     </div>
 

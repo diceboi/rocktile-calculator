@@ -261,6 +261,10 @@ export function useCalculator() {
   const canProceed = computed(() => {
     switch (state.currentStep) {
       case 1:
+        // Termék és szín kötelező
+        return Boolean(state.product && state.color);
+
+      case 2:
         // Tetőforma (és ha van altípus, az altípus) kötelező
         if (!state.roofType) return false;
         if (selectedRoofGroup.value?.subtypes?.length > 0 && !state.roofSubtype) {
@@ -268,7 +272,7 @@ export function useCalculator() {
         }
         return true;
 
-      case 2:
+      case 3:
         // Tetőfelület kötelezően > 0, minden egyéb aktív méretmező >= 0 érvényes
         if (!activeFieldKeys.value.length) return false;
         const roofAreaVal = state.dimensions.roofArea;
@@ -280,10 +284,6 @@ export function useCalculator() {
           const val = state.dimensions[key];
           return typeof val === 'number' && !isNaN(val) && val >= 0;
         });
-
-      case 3:
-        // Termék és szín kötelező
-        return Boolean(state.product && state.color);
 
       case 4:
         // Szellőzés opcionális, mindig tovább lehet lépni

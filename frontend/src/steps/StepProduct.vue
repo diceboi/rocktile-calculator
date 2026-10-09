@@ -47,7 +47,7 @@ onMounted(() => {
   <div class="flex flex-col gap-7">
     <!-- Step header -->
     <div class="rc-step-header">
-      <span class="rc-step-badge">3. lépés</span>
+      <span class="rc-step-badge">1. lépés</span>
       <h2 class="rc-step-heading">Válasszon cserepet és színt</h2>
     </div>
 

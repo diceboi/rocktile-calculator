@@ -379,21 +379,23 @@ async function sendExpertReviewRequest() {
   }
 }
 
-/* ─── Ajánlat elküldése kollégáknak (Sztenderd kalkuláció esetén) ─── */
-const isSendQuoteModalOpen = ref(false);
-const sendQuoteLoading     = ref(false);
-const sendQuoteError       = ref(null);
-const sendQuoteSuccess     = ref(false);
-const sentQuoteId          = ref(null);
+/* ─── Ajánlat elküldése munkatársainknak (Részletes ajánlatkérés) ─── */
+const isSendQuoteModalOpen    = ref(false);
+const sendQuoteLoading        = ref(false);
+const sendQuoteError          = ref(null);
+const sendQuoteSuccess        = ref(false);
+const sentQuoteId             = ref(null);
 
-const sendQuoteName        = ref('');
-const sendQuoteEmail       = ref('');
-const sendQuotePhone       = ref('');
-const sendQuoteNote        = ref('');
-const sendQuoteTouched     = ref(false);
+const sendQuoteName           = ref('');
+const sendQuoteEmail         = ref('');
+const sendQuotePhone         = ref('');
+const sendQuoteNote          = ref('');
+const sendQuotePrivacyConsent = ref(false);
+const sendQuoteTouched       = ref(false);
 
 function openSendQuoteModal() {
   sendQuoteNote.value = state.note || '';
+  sendQuotePrivacyConsent.value = false;
   sendQuoteError.value = null;
   sendQuoteTouched.value = false;
   isSendQuoteModalOpen.value = true;
@@ -401,6 +403,7 @@ function openSendQuoteModal() {
 
 function closeSendQuoteModal() {
   isSendQuoteModalOpen.value = false;
+  sendQuotePrivacyConsent.value = false;
 }
 
 async function submitSendQuoteToStaff() {
@@ -419,6 +422,10 @@ async function submitSendQuoteToStaff() {
     sendQuoteError.value = 'Kérjük, adja meg a telefonszámát.';
     return;
   }
+  if (!sendQuotePrivacyConsent.value) {
+    sendQuoteError.value = 'Kérjük, fogadja el az Adatkezelési tájékoztatót a folytatáshoz.';
+    return;
+  }
 
   sendQuoteLoading.value = true;
 
@@ -427,6 +434,7 @@ async function submitSendQuoteToStaff() {
       name:             sendQuoteName.value.trim(),
       email:            sendQuoteEmail.value.trim(),
       phone:            sendQuotePhone.value.trim(),
+      privacyConsent:   true,
       customerNote:     sendQuoteNote.value.trim(),
       note:             buildRoofSummaryText(sendQuoteNote.value.trim()),
       product:          state.product,
@@ -489,18 +497,69 @@ async function submitSendQuoteToStaff() {
   }
 }
 
-/* ─── PDF Generation ─── */
-function downloadPdf() {
-  pdfLoading.value = true;
-  try {
-    trackPdfDownload({
-      value: grandTotal.value || currentTotal.value,
-      productName: selectedProduct.value?.name,
-      roofType: (selectedRoofGroup.value?.name || '') + (selectedRoofConfig.value?.name ? ' - ' + selectedRoofConfig.value.name : ''),
-    });
+/* ─── PDF Email Küldés Állapot ─── */
+const isEmailPdfModalOpen       = ref(false);
+const emailPdfName              = ref('');
+const emailPdfAddress           = ref('');
+const emailPdfPhone             = ref('');
+const emailPdfPrivacyConsent    = ref(false);
+const emailPdfNewsletterConsent = ref(false);
+const emailPdfTouched           = ref(false);
+const emailPdfLoading           = ref(false);
+const emailPdfError             = ref(null);
+const emailPdfSuccess           = ref(false);
+const emailPdfSuccessQuoteId    = ref('');
+const emailPdfBlobUrl           = ref(null);
 
-    generatePdfQuote({
-      calculationId:    'RT-' + Date.now().toString().slice(-6),
+function openEmailPdfModal() {
+  emailPdfName.value              = sendQuoteName.value || '';
+  emailPdfAddress.value           = sendQuoteEmail.value || '';
+  emailPdfPhone.value             = sendQuotePhone.value || '';
+  emailPdfPrivacyConsent.value    = false;
+  emailPdfNewsletterConsent.value = false;
+  emailPdfTouched.value           = false;
+  emailPdfError.value             = null;
+  emailPdfSuccess.value           = false;
+  emailPdfSuccessQuoteId.value    = '';
+  emailPdfBlobUrl.value           = null;
+  isEmailPdfModalOpen.value       = true;
+}
+
+function closeEmailPdfModal() {
+  isEmailPdfModalOpen.value = false;
+  if (emailPdfSuccess.value) {
+    setTimeout(() => {
+      emailPdfSuccess.value = false;
+      emailPdfBlobUrl.value = null;
+    }, 500);
+  }
+}
+
+async function submitEmailPdfQuote() {
+  emailPdfTouched.value = true;
+  emailPdfError.value = null;
+
+  if (!emailPdfName.value.trim()) {
+    emailPdfError.value = 'Kérjük, adja meg a nevét!';
+    return;
+  }
+  if (!emailPdfAddress.value.trim() || !emailPdfAddress.value.includes('@') || !emailPdfAddress.value.includes('.')) {
+    emailPdfError.value = 'Kérjük, adjon meg egy érvényes email címet!';
+    return;
+  }
+  if (!emailPdfPrivacyConsent.value) {
+    emailPdfError.value = 'Kérjük, fogadja el az Adatkezelési tájékoztatót a folytatáshoz!';
+    return;
+  }
+
+  emailPdfLoading.value = true;
+
+  try {
+    const calcId = 'RT-' + Date.now().toString().slice(-6);
+
+    // PDF generálás a háttérben böngészős letöltés nélkül
+    const pdfResult = await generatePdfQuote({
+      calculationId:    calcId,
       productName:      selectedProduct.value?.name,
       colorName:        selectedColor.value?.fullName || selectedColor.value?.name,
       roofTypeName:     (selectedRoofGroup.value?.name || '') + (selectedRoofConfig.value?.name ? ' - ' + selectedRoofConfig.value.name : ''),
@@ -517,11 +576,81 @@ function downloadPdf() {
       paletteFeeTotal:  paletteFeeTotal.value,
       shippingFeeTotal: shippingFeeTotal.value,
       note:             state.note,
+      download:         false,
     });
-  } catch (e) {
-    console.error('PDF generálási hiba:', e);
+
+    if (pdfResult?.blob) {
+      emailPdfBlobUrl.value = URL.createObjectURL(pdfResult.blob);
+    }
+
+    const payload = {
+      name:              emailPdfName.value.trim(),
+      email:             emailPdfAddress.value.trim(),
+      phone:             emailPdfPhone.value.trim(),
+      source:            'pdf_email_request',
+      isPdfEmail:        true,
+      privacyConsent:    true,
+      newsletterConsent: Boolean(emailPdfNewsletterConsent.value),
+      pdfBase64:         pdfResult?.base64 || '',
+      product:           state.product,
+      color:             state.color,
+      roofType:          state.roofType,
+      roofSubtype:       state.roofSubtype,
+      dimensions:        { ...state.dimensions },
+      ventilation:       state.hasVentilation ? 'standard' : 'none',
+      hasVentilation:    Boolean(state.hasVentilation),
+      ventilationCount:  state.hasVentilation ? (state.ventilationCount || 1) : 0,
+      hasChimney:        Boolean(state.hasChimney),
+      chimneyCount:      state.hasChimney ? (state.chimneyCount || 1) : 0,
+      fastening:         state.fastening,
+      vergeType:         state.vergeType || 'over-cover',
+      items:             editableItems.value || [],
+      totalAmount:       currentTotal.value || 0,
+      paletteCount:      paletteCount.value,
+      paletteFeeTotal:   paletteFeeTotal.value,
+      shippingFeeTotal:  shippingFeeTotal.value,
+      grandTotal:        grandTotal.value,
+      landingUrl:        state.landingUrl,
+      referrer:          state.referrerUrl,
+      label:             'ROCKTILE - PDF AJÁNLAT',
+      tag:               'ROCKTILE - PDF AJÁNLAT',
+    };
+
+    const res = await fetch('/wp-json/rocktile/v1/request-review', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify(payload),
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message || 'Nem sikerült az árajánlat elküldése.');
+    }
+
+    emailPdfSuccess.value = true;
+    emailPdfSuccessQuoteId.value = data.quoteId || calcId;
+
+    trackPdfDownload({
+      value: grandTotal.value || currentTotal.value,
+      productName: selectedProduct.value?.name,
+      roofType: (selectedRoofGroup.value?.name || '') + (selectedRoofConfig.value?.name ? ' - ' + selectedRoofConfig.value.name : ''),
+    });
+  } catch (err) {
+    emailPdfError.value = err.message || 'Hiba történt a PDF küldése során.';
   } finally {
-    pdfLoading.value = false;
+    emailPdfLoading.value = false;
+  }
+}
+
+function downloadPdfDirectly() {
+  if (emailPdfBlobUrl.value) {
+    const a = document.createElement('a');
+    a.href = emailPdfBlobUrl.value;
+    a.download = `Rocktile-Arajanlat-${emailPdfSuccessQuoteId.value || 'kalkulacio'}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   }
 }
 
@@ -1139,25 +1268,7 @@ onMounted(() => {
         class="grid gap-3"
         :class="calculationResult?.requiresManualReview ? 'grid-cols-2 max-sm:grid-cols-1' : 'grid-cols-3 max-md:grid-cols-1'"
       >
-        <!-- PDF Letöltés CTA -->
-        <button
-          type="button"
-          class="rc-btn rc-pdf-btn"
-          :disabled="pdfLoading || loading"
-          @click="downloadPdf"
-        >
-          <span v-if="pdfLoading" class="rc-spinner size-[18px] shrink-0 rounded-full border-2 border-slate-300 border-t-navy"></span>
-          <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="size-5 shrink-0">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-            <polyline points="14 2 14 8 20 8"></polyline>
-            <line x1="12" y1="18" x2="12" y2="12"></line>
-            <line x1="9" y1="15" x2="12" y2="18"></line>
-            <line x1="15" y1="15" x2="12" y2="18"></line>
-          </svg>
-          <span>Árajánlat letöltése (PDF)</span>
-        </button>
-
-        <!-- HA EGYEDI TETŐFORMA: Szakértői ajánlatkérés gomb -->
+        <!-- HA EGYEDI TETŐFORMA: Szakértői ajánlatkérés gomb (elsődleges narancs) -->
         <button
           v-if="calculationResult?.requiresManualReview"
           type="button"
@@ -1174,11 +1285,11 @@ onMounted(() => {
           <span>{{ reviewLoading ? 'Küldés folyamatban...' : reviewSuccess ? 'Ajánlatkérés elküldve ✓' : 'Szakértői ajánlatkérés elküldése' }}</span>
         </button>
 
-        <!-- SZTENDERD TETŐFORMA: Ajánlat beküldése kollégáinknak gomb -->
+        <!-- 1. SZTENDERD TETŐFORMA: Kérem a részletes ajánlatot (elsődleges narancs gomb) -->
         <button
           v-if="!calculationResult?.requiresManualReview"
           type="button"
-          class="rc-btn rc-quote-btn"
+          class="rc-btn rc-btn-primary rc-quote-btn"
           :disabled="loading || !editableItems?.length"
           @click="openSendQuoteModal"
         >
@@ -1186,20 +1297,37 @@ onMounted(() => {
             <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
             <polyline points="22,6 12,13 2,6"></polyline>
           </svg>
-          <span>Ajánlat beküldése kollégáinknak</span>
+          <span>Kérem a részletes ajánlatot</span>
         </button>
 
-        <!-- SZTENDERD TETŐFORMA: Kosárba rakom gomb -->
+        <!-- 2. PDF Ajánlat küldése emailben CTA (másodlagos kék/fehér gomb) -->
+        <button
+          type="button"
+          class="rc-btn rc-pdf-btn"
+          :disabled="loading || !editableItems?.length"
+          @click="openEmailPdfModal"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="size-5 shrink-0">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="12" y1="18" x2="12" y2="12"></line>
+            <line x1="9" y1="15" x2="12" y2="18"></line>
+            <line x1="15" y1="15" x2="12" y2="18"></line>
+          </svg>
+          <span>Árajánlat küldése emailben (PDF)</span>
+        </button>
+
+        <!-- 3. SZTENDERD TETŐFORMA: Kosárba rakom gomb (harmadik helyen, halvány megjelenéssel) -->
         <button
           v-if="!calculationResult?.requiresManualReview"
           type="button"
-          class="rc-btn rc-btn-primary rc-cart-btn"
+          class="rc-btn rc-cart-btn"
           :disabled="cartLoading || loading || !editableItems?.length"
           @click="addToCart"
           :aria-busy="cartLoading"
         >
-          <span v-if="cartLoading" class="rc-spinner size-[18px] shrink-0 rounded-full border-[2.5px] border-white/35 border-t-white" aria-hidden="true"></span>
-          <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="size-5 shrink-0" aria-hidden="true">
+          <span v-if="cartLoading" class="rc-spinner size-[18px] shrink-0 rounded-full border-2 border-slate-400 border-t-slate-700" aria-hidden="true"></span>
+          <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-5 shrink-0" aria-hidden="true">
             <circle cx="9" cy="21" r="1"></circle>
             <circle cx="20" cy="21" r="1"></circle>
             <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
@@ -1222,7 +1350,7 @@ onMounted(() => {
       >
         <div class="rocktile-modal-box relative flex w-full max-w-lg flex-col gap-5 border-2 border-navy bg-white p-6 shadow-2xl rounded-none max-h-[90vh] overflow-y-auto">
           <div class="flex items-start justify-between gap-4 border-b border-cream pb-3">
-            <div class="flex items-center gap-3">
+            <div class="flex flex-col items-start gap-2.5">
               <div class="flex size-9 shrink-0 items-center justify-center rounded-sm bg-[#022a50] text-[#17d5ce]" aria-hidden="true">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-5">
                   <path d="M10 14l11 -11"></path>
@@ -1231,10 +1359,10 @@ onMounted(() => {
               </div>
               <div>
                 <h3 id="send-quote-title" class="m-0 font-heading text-lg font-bold text-navy">
-                  Ajánlat beküldése kollégáinknak
+                  Részletes árajánlat kérése
                 </h3>
                 <p class="mt-0.5 mb-0 font-sans text-xs text-muted leading-relaxed">
-                  Nem szeretne most azonnal vásárolni? Küldje be a kalkulációt, és munkatársaink hamarosan felveszik Önnel a kapcsolatot!
+                  Adja meg adatait, és kollégáink hamarosan felveszik Önnel a kapcsolatot a részletes árajánlattal!
                 </p>
               </div>
             </div>
@@ -1333,6 +1461,20 @@ onMounted(() => {
               ></textarea>
             </div>
 
+            <!-- Adatkezelési tájékoztató hozzájárulás -->
+            <div class="flex items-start gap-2.5 pt-1">
+              <input
+                id="sq-privacy"
+                type="checkbox"
+                v-model="sendQuotePrivacyConsent"
+                class="mt-1 size-4 shrink-0 rounded border-slate-300 text-brick focus:ring-brick cursor-pointer accent-[#cf3f29]"
+                required
+              />
+              <label for="sq-privacy" class="font-sans text-xs text-slate-700 leading-snug cursor-pointer select-none">
+                Elfogadom az <a href="/adatvedelmi-tajekoztato/" target="_blank" rel="noopener noreferrer" class="text-brick underline hover:text-navy font-semibold">Adatkezelési tájékoztatóban</a> foglaltakat. <span class="text-brick font-bold">*</span>
+              </label>
+            </div>
+
             <!-- Gombok egymás alá rendezve -->
             <div class="mt-2 flex flex-col gap-2.5 border-t border-cream pt-4 w-full">
               <button
@@ -1341,7 +1483,7 @@ onMounted(() => {
                 :disabled="sendQuoteLoading"
               >
                 <span v-if="sendQuoteLoading" class="rc-spinner size-3.5 shrink-0 rounded-full border-2 border-white/35 border-t-white" aria-hidden="true"></span>
-                <span>{{ sendQuoteLoading ? 'Beküldés...' : 'Ajánlat beküldése' }}</span>
+                <span>{{ sendQuoteLoading ? 'Küldés folyamatban...' : 'Kérem a részletes ajánlatot' }}</span>
               </button>
               <button
                 type="button"
@@ -1353,6 +1495,212 @@ onMounted(() => {
               </button>
             </div>
           </form>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- ══════════════════════════════
+         MODAL: ÁRAJÁNLAT KÜLDÉSE EMAILBEN (PDF)
+    ══════════════════════════════ -->
+    <Teleport to="body">
+      <div
+        v-if="isEmailPdfModalOpen"
+        class="rocktile-calculator-ui rocktile-modal-backdrop"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="email-pdf-title"
+      >
+        <div class="rocktile-modal-box relative flex w-full max-w-lg flex-col gap-5 border-2 border-navy bg-white p-6 shadow-2xl rounded-none max-h-[90vh] overflow-y-auto">
+          <div class="flex items-start justify-between gap-4 border-b border-cream pb-3">
+            <div class="flex flex-col items-start gap-2.5">
+              <div class="flex size-9 shrink-0 items-center justify-center rounded-sm bg-[#022a50] text-[#17d5ce]" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-5">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="12" y1="18" x2="12" y2="12"></line>
+                  <line x1="9" y1="15" x2="12" y2="18"></line>
+                  <line x1="15" y1="15" x2="12" y2="18"></line>
+                </svg>
+              </div>
+              <div>
+                <h3 id="email-pdf-title" class="m-0 font-heading text-lg font-bold text-navy">
+                  Árajánlat küldése emailben (PDF)
+                </h3>
+                <p class="mt-0.5 mb-0 font-sans text-xs text-muted leading-relaxed">
+                  Adja meg nevét és e-mail címét, és azonnal elküldjük a kalkuláció részletes PDF kivonatát!
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              class="rc-modal-close shrink-0"
+              @click="closeEmailPdfModal"
+              aria-label="Bezárás"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="size-5">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+
+          <!-- SIKERES KÜLDÉS NÉZET -->
+          <div v-if="emailPdfSuccess" class="flex flex-col items-center text-center gap-4 py-2">
+            <div class="flex size-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="size-7">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+            <div class="space-y-1.5">
+              <h4 class="font-heading text-lg font-bold text-navy">Árajánlat sikeresen elküldve!</h4>
+              <p class="font-sans text-xs text-slate-600 max-w-sm mx-auto leading-relaxed">
+                A részletes PDF árajánlatot elküldtük a(z) <strong class="text-navy">{{ emailPdfAddress }}</strong> e-mail címre. Kérjük, ellenőrizze beérkező leveleit (szükség esetén a Spam/Promóciók mappát is).
+              </p>
+              <p v-if="emailPdfSuccessQuoteId" class="text-xs font-mono text-slate-500 pt-1">
+                Azonosító: <strong>{{ emailPdfSuccessQuoteId }}</strong>
+              </p>
+            </div>
+            <div class="flex flex-col gap-2.5 w-full pt-2">
+              <button
+                v-if="emailPdfBlobUrl"
+                type="button"
+                class="rc-modal-btn rc-modal-btn-secondary w-full flex items-center justify-center gap-2"
+                @click="downloadPdfDirectly"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="size-4">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span>PDF közvetlen letöltése most</span>
+              </button>
+              <button
+                type="button"
+                class="rc-modal-btn rc-modal-btn-primary w-full"
+                @click="closeEmailPdfModal"
+              >
+                Rendben, bezárás
+              </button>
+            </div>
+          </div>
+
+          <!-- KÜLDÉSI ŰRLAP -->
+          <template v-else>
+            <div v-if="emailPdfError" class="flex items-center gap-2 border border-red-200 bg-red-50 p-3 font-sans text-xs text-red-800">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="size-4 shrink-0 text-red-600">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <span>{{ emailPdfError }}</span>
+            </div>
+
+            <!-- Összegző mini sáv -->
+            <div class="flex items-center justify-between bg-slate-50 border border-slate-200 p-3 rounded-xs font-sans text-xs">
+              <div>
+                <span class="text-slate-500 block">Kalkulált végösszeg:</span>
+                <strong class="font-heading text-base font-bold text-navy">{{ grandTotalFormatted }}</strong>
+              </div>
+              <div class="text-right text-slate-500">
+                <div>{{ selectedProduct?.name }}</div>
+                <div class="font-semibold text-slate-700">{{ selectedColor?.name }}</div>
+              </div>
+            </div>
+
+            <form @submit.prevent="submitEmailPdfQuote" class="flex flex-col gap-3.5">
+              <div class="flex flex-col gap-1">
+                <label for="epdf-name" class="font-heading text-xs font-bold text-navy">
+                  Név <span class="text-brick">*</span>
+                </label>
+                <input
+                  id="epdf-name"
+                  type="text"
+                  v-model="emailPdfName"
+                  placeholder="Pl. Kovács János"
+                  class="rc-field py-2 px-3 text-sm"
+                  :class="emailPdfTouched && !emailPdfName.trim() ? 'border-red-500 bg-red-50' : ''"
+                  required
+                />
+              </div>
+
+              <div class="grid grid-cols-2 gap-3 max-sm:grid-cols-1">
+                <div class="flex flex-col gap-1">
+                  <label for="epdf-email" class="font-heading text-xs font-bold text-navy">
+                    Email cím <span class="text-brick">*</span>
+                  </label>
+                  <input
+                    id="epdf-email"
+                    type="email"
+                    v-model="emailPdfAddress"
+                    placeholder="Pl. kovacs@pelda.hu"
+                    class="rc-field py-2 px-3 text-sm"
+                    :class="emailPdfTouched && (!emailPdfAddress.trim() || !emailPdfAddress.includes('@')) ? 'border-red-500 bg-red-50' : ''"
+                    required
+                  />
+                </div>
+
+                <div class="flex flex-col gap-1">
+                  <label for="epdf-phone" class="font-heading text-xs font-bold text-navy">
+                    Telefonszám <span class="text-slate-400 font-normal">(opcionális)</span>
+                  </label>
+                  <input
+                    id="epdf-phone"
+                    type="tel"
+                    v-model="emailPdfPhone"
+                    placeholder="Pl. +36 30 123 4567"
+                    class="rc-field py-2 px-3 text-sm"
+                  />
+                </div>
+              </div>
+
+              <!-- Adatkezelési tájékoztató hozzájárulás -->
+              <div class="flex items-start gap-2.5 pt-1">
+                <input
+                  id="epdf-privacy"
+                  type="checkbox"
+                  v-model="emailPdfPrivacyConsent"
+                  class="mt-1 size-4 shrink-0 rounded border-slate-300 text-brick focus:ring-brick cursor-pointer accent-[#cf3f29]"
+                  required
+                />
+                <label for="epdf-privacy" class="font-sans text-xs text-slate-700 leading-snug cursor-pointer select-none">
+                  Elfogadom az <a href="/adatvedelmi-tajekoztato/" target="_blank" rel="noopener noreferrer" class="text-brick underline hover:text-navy font-semibold">Adatkezelési tájékoztatóban</a> foglaltakat. <span class="text-brick font-bold">*</span>
+                </label>
+              </div>
+
+              <!-- Hírlevél feliratkozás -->
+              <div class="flex items-start gap-2.5">
+                <input
+                  id="epdf-newsletter"
+                  type="checkbox"
+                  v-model="emailPdfNewsletterConsent"
+                  class="mt-1 size-4 shrink-0 rounded border-slate-300 text-brick focus:ring-brick cursor-pointer accent-[#cf3f29]"
+                />
+                <label for="epdf-newsletter" class="font-sans text-xs text-slate-700 leading-snug cursor-pointer select-none">
+                  Hozzájárulok, hogy a Rocktile akciókról, újdonságokról és szakmai tartalmakról hírlevelet küldjön számomra.
+                </label>
+              </div>
+
+              <!-- Gombok egymás alá rendezve -->
+              <div class="mt-2 flex flex-col gap-2.5 border-t border-cream pt-4 w-full">
+                <button
+                  type="submit"
+                  class="rc-modal-btn rc-modal-btn-primary w-full"
+                  :disabled="emailPdfLoading"
+                >
+                  <span v-if="emailPdfLoading" class="rc-spinner size-3.5 shrink-0 rounded-full border-2 border-white/35 border-t-white" aria-hidden="true"></span>
+                  <span>{{ emailPdfLoading ? 'PDF generálása és küldése...' : 'Árajánlat küldése emailben' }}</span>
+                </button>
+                <button
+                  type="button"
+                  class="rc-modal-btn rc-modal-btn-secondary w-full"
+                  @click="closeEmailPdfModal"
+                  :disabled="emailPdfLoading"
+                >
+                  Mégse
+                </button>
+              </div>
+            </form>
+          </template>
         </div>
       </div>
     </Teleport>

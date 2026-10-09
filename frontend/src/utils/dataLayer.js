@@ -27,9 +27,9 @@ export function pushDataLayer(eventData) {
  */
 export function trackStepView(stepNumber, context = {}) {
   const stepMap = {
-    1: { name: 'Tetőforma kiválasztása', key: 'roof_type' },
-    2: { name: 'Méretek megadása', key: 'dimensions' },
-    3: { name: 'Termék kiválasztása', key: 'product' },
+    1: { name: 'Termék kiválasztása', key: 'product' },
+    2: { name: 'Tetőforma kiválasztása', key: 'roof_type' },
+    3: { name: 'Méretek megadása', key: 'dimensions' },
     4: { name: 'Szellőzés és kémény', key: 'ventilation' },
     5: { name: 'Rögzítés módja', key: 'fastening' },
     6: { name: 'Összesítés és árajánlat', key: 'summary' },

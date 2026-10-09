@@ -41,6 +41,14 @@ class Rocktile_Calculator_Quote_Request {
 			|| ( isset( $params['label'] ) && false !== stripos( $params['label'], 'seg' ) )
 			|| ( isset( $params['tag'] ) && false !== stripos( $params['tag'], 'seg' ) )
 		);
+		$isPdfEmail = (
+			'pdf_email_request' === $source
+			|| ! empty( $params['isPdfEmail'] )
+		);
+		$privacyConsent    = ! empty( $params['privacyConsent'] );
+		$newsletterConsent = ! empty( $params['newsletterConsent'] );
+		$pdfBase64         = isset( $params['pdfBase64'] ) ? $params['pdfBase64'] : '';
+		$images            = isset( $params['images'] ) && is_array( $params['images'] ) ? $params['images'] : array();
 
 		if ( empty( $name ) ) {
 			return new WP_Error( 'missing_name', 'Kérjük, adja meg nevét.', array( 'status' => 400 ) );
@@ -50,8 +58,8 @@ class Rocktile_Calculator_Quote_Request {
 			return new WP_Error( 'invalid_email', 'Kérjük, adjon meg egy érvényes email címet.', array( 'status' => 400 ) );
 		}
 
-		// A 3. lépésbeli segítségkérésnél a telefonszám opcionális, teljes ajánlatkérésnél kötelező
-		if ( ! $isStep3Help && empty( $phone ) ) {
+		// A 3. lépésbeli segítségkérésnél és a PDF email küldésnél a telefonszám opcionális, részletes ajánlatkérésnél kötelező
+		if ( ! $isStep3Help && ! $isPdfEmail && empty( $phone ) ) {
 			return new WP_Error( 'missing_phone', 'Kérjük, adja meg telefonszámát.', array( 'status' => 400 ) );
 		}
 
@@ -119,23 +127,77 @@ class Rocktile_Calculator_Quote_Request {
 		}
 
 		$hasItems = ! empty( $items );
-		$quotePrefix = $isStep3Help ? 'RT-HELP-' : ( $hasItems ? 'RT-AJ-' : 'RT-REQ-' );
+		$quotePrefix = $isStep3Help ? 'RT-HELP-' : ( $isPdfEmail ? 'RT-PDF-' : ( $hasItems ? 'RT-AJ-' : 'RT-REQ-' ) );
 		$quoteId = $quotePrefix . strtoupper( substr( md5( uniqid( (string) time(), true ) ), 0, 6 ) );
 
 		$chimneyText = $hasChimney ? sprintf( 'Igen (%d db kémény, %d db síklemez)', $chimneyCount, $chimneyCount * 2 ) : 'Nincs';
 		$ventText    = $hasVent ? sprintf( 'Igen (%d db átvezető elem)', $ventCount ) : 'Nem kér';
+
+		// Feltöltött képek elmentése a WordPress uploads könyvtárba és webes URL-ek generálása (Pipedrive és email számára)
+		$savedImages = array();
+		$uploadDir   = wp_upload_dir();
+		$quotesDir   = trailingslashit( $uploadDir['basedir'] ) . 'rocktile-quotes';
+		$quotesUrl   = trailingslashit( $uploadDir['baseurl'] ) . 'rocktile-quotes';
+
+		if ( ! empty( $images ) ) {
+			if ( ! file_exists( $quotesDir ) ) {
+				wp_mkdir_p( $quotesDir );
+			}
+
+			foreach ( $images as $idx => $img ) {
+				if ( empty( $img['base64'] ) ) {
+					continue;
+				}
+				$cleanImgBase64 = preg_replace( '#^data:[^;]+;base64,#i', '', $img['base64'] );
+				$imgDecoded     = base64_decode( $cleanImgBase64 );
+				if ( ! $imgDecoded ) {
+					continue;
+				}
+				$origName = ! empty( $img['name'] ) ? sanitize_file_name( $img['name'] ) : ( 'teto_kep_' . ( $idx + 1 ) . '.jpg' );
+				$ext      = strtolower( pathinfo( $origName, PATHINFO_EXTENSION ) );
+				if ( ! in_array( $ext, array( 'jpg', 'jpeg', 'png', 'webp', 'pdf', 'heic' ), true ) ) {
+					$ext = 'jpg';
+					$origName .= '.jpg';
+				}
+				$safeName    = sanitize_file_name( $quoteId . '_foto_' . ( $idx + 1 ) . '_' . $origName );
+				$targetFile  = trailingslashit( $quotesDir ) . $safeName;
+				$targetUrl   = trailingslashit( $quotesUrl ) . rawurlencode( $safeName );
+
+				if ( false !== file_put_contents( $targetFile, $imgDecoded ) ) {
+					$savedImages[] = array(
+						'file' => $targetFile,
+						'url'  => $targetUrl,
+						'name' => $origName,
+					);
+				}
+			}
+		}
 
 		// Összeállítjuk a Pipedrive / CRM / Megjegyzés szöveges összefoglalót az összes kitöltött adattal
 		$summaryLines = array();
 		if ( $isStep3Help ) {
 			$summaryLines[] = "=== [CÍMKE: ROCKTILE - SEGÍTSÉG] SEGÍTSÉGKÉRÉS A MÉRETEKHEZ ===";
 			$summaryLines[] = "Pipedrive Címke: ROCKTILE - SEGÍTSÉG";
+		} elseif ( $isPdfEmail ) {
+			$summaryLines[] = "=== [CÍMKE: ROCKTILE - PDF AJÁNLAT] ÁRAJÁNLAT PDF EMAILBEN ===";
+			$summaryLines[] = "Pipedrive Címke: ROCKTILE - PDF AJÁNLAT";
 		} else {
 			$summaryLines[] = "=== [CÍMKE: ROCKTILE - KALKULÁTOR] ROCKTILE TETŐKALKULÁCIÓ ÉS ÁRAJÁNLAT ADATOK ===";
 			$summaryLines[] = "Pipedrive Címke: ROCKTILE - KALKULÁTOR";
 		}
+		if ( $newsletterConsent ) {
+			$summaryLines[] = "Pipedrive Címke: HÍRLEVÉL";
+		}
 		$summaryLines[] = "Azonosító: " . $quoteId;
 		$summaryLines[] = "Dátum: " . current_time( 'Y.m.d. H:i' );
+
+		if ( ! empty( $savedImages ) ) {
+			$summaryLines[] = "\n--- CSATOLT KÉPEK / TERVRAJZOK ---";
+			$summaryLines[] = sprintf( "• Csatolt képek száma: %d db", count( $savedImages ) );
+			foreach ( $savedImages as $sIdx => $sImg ) {
+				$summaryLines[] = sprintf( "• %d. kép linkje: %s", $sIdx + 1, $sImg['url'] );
+			}
+		}
 
 		if ( ! empty( $note ) ) {
 			$summaryLines[] = "\n[ÜGYFÉL EGYEDI MEGJEGYZÉSE / KÉRDÉSE]:\n" . $note;
@@ -188,6 +250,10 @@ class Rocktile_Calculator_Quote_Request {
 			}
 		}
 
+		$summaryLines[] = "\n--- JOGI HOZZÁJÁRULÁSOK ÉS FELIRATKOZÁSOK ---";
+		$summaryLines[] = "• Adatkezelési tájékoztató: " . ( $privacyConsent ? 'Elfogadva [IGEN]' : 'Nincs rögzítve' );
+		$summaryLines[] = "• Hírlevél feliratkozás: " . ( $newsletterConsent ? 'Hozzájárult [IGEN]' : 'Nem kért hírlevelet [NEM]' );
+
 		$fullNote = implode( "\n", $summaryLines );
 
 		// Frissítjük a paramétereket a Pipedrive és külső integrációk számára
@@ -195,6 +261,8 @@ class Rocktile_Calculator_Quote_Request {
 		$params['note']           = $fullNote;
 		$params['full_note']      = $fullNote;
 		$params['pipedrive_note'] = $fullNote;
+		$params['image_urls']     = ! empty( $savedImages ) ? wp_list_pluck( $savedImages, 'url' ) : array();
+		$params['images_data']    = $savedImages;
 
 		if ( $isStep3Help ) {
 			$params['label']           = 'ROCKTILE - SEGÍTSÉG';
@@ -299,8 +367,12 @@ class Rocktile_Calculator_Quote_Request {
 		$adminRecipients = apply_filters( 'rocktile_calculator_admin_recipients', $adminRecipients );
 
 		if ( $isStep3Help ) {
-			$mailTitle = 'Rocktile – Segítségkérés a méretekhez';
-			$subject   = sprintf( '[Rocktile Kalkulátor] [ROCKTILE - SEGÍTSÉG] Segítségkérés a méretekhez: %s (%s)', $name, $roofName );
+			$photoTag  = ! empty( $images ) ? ' [KÉPEKKEL]' : '';
+			$mailTitle = 'Rocktile – Segítségkérés a méretekhez' . ( ! empty( $images ) ? ' (Képekkel / Tervrajzzal)' : '' );
+			$subject   = sprintf( '[Rocktile Kalkulátor] [ROCKTILE - SEGÍTSÉG] Segítségkérés a méretekhez%s: %s (%s)', $photoTag, $name, $roofName );
+		} elseif ( $isPdfEmail ) {
+			$mailTitle = 'Rocktile – Árajánlat PDF emailben elküldve';
+			$subject   = sprintf( '[Rocktile Kalkulátor] [ROCKTILE - PDF AJÁNLAT] PDF árajánlat kérés: %s (%s)%s', $name, $roofName, $newsletterConsent ? ' [HÍRLEVÉL]' : '' );
 		} else {
 			$mailTitle = $hasItems ? 'Rocktile – Új kalkulált árajánlat megkeresés' : 'Rocktile – Új szakértői ajánlatkérés';
 			$subject   = sprintf( '[Rocktile Kalkulátor] [ROCKTILE - KALKULÁTOR] %s: %s (%s)', $hasItems ? 'Új árajánlat' : 'Szakértői ajánlatkérés', $name, $roofName );
@@ -327,6 +399,27 @@ class Rocktile_Calculator_Quote_Request {
 			</div>'
 			: '';
 
+		$imagesHtml = '';
+		if ( ! empty( $savedImages ) ) {
+			$imgLinks = array();
+			foreach ( $savedImages as $sIdx => $sImg ) {
+				$imgLinks[] = sprintf(
+					'<li style="margin: 4px 0;"><a href="%s" target="_blank" style="color: #0284c7; text-decoration: underline; font-weight: bold;">%s</a></li>',
+					esc_url( $sImg['url'] ),
+					esc_html( $sImg['name'] )
+				);
+			}
+			$imagesHtml = sprintf(
+				'<div style="background: #f0fdf4; border-left: 4px solid #16a34a; padding: 12px 16px; margin: 20px 25px 0 25px; border-radius: 4px;">
+					<strong style="color: #15803d; font-size: 14px;">Csatolt tetőfotók / tervrajzok (%d db):</strong>
+					<p style="margin: 4px 0 6px 0; font-size: 13px; color: #14532d; line-height: 1.4;">A feltöltött képek csatolmányként is megérkeztek ehhez az e-mailhez, és az alábbi közvetlen linkeken is bármikor megtekinthetők:</p>
+					<ul style="margin: 0; padding-left: 20px; font-size: 13px;">%s</ul>
+				</div>',
+				count( $savedImages ),
+				implode( '', $imgLinks )
+			);
+		}
+
 		$pipedriveLabelRow = $isStep3Help
 			? '<p style="margin: 6px 0;"><strong>Pipedrive Címke:</strong> <span style="background: #dc2626; color: #ffffff; font-weight: bold; padding: 2px 8px; border-radius: 3px;">ROCKTILE - SEGÍTSÉG</span></p>'
 			: '<p style="margin: 6px 0;"><strong>Pipedrive Címke:</strong> <span style="background: #2563eb; color: #ffffff; font-weight: bold; padding: 2px 8px; border-radius: 3px;">ROCKTILE - KALKULÁTOR</span></p>';
@@ -342,6 +435,7 @@ class Rocktile_Calculator_Quote_Request {
 						<p style="margin: 5px 0 0 0; font-size: 13px; color: #cbd5e1;">Azonosító: <strong>%s</strong> | Dátum: %s</p>
 					</div>
 
+					%s
 					%s
 
 					<div style="padding: 25px;">
@@ -385,6 +479,7 @@ class Rocktile_Calculator_Quote_Request {
 			esc_html( $quoteId ),
 			esc_html( current_time( 'Y.m.d. H:i' ) ),
 			$helpBannerHtml,
+			$imagesHtml,
 			esc_html( $name ),
 			esc_attr( $email ),
 			esc_html( $email ),
@@ -415,18 +510,64 @@ class Rocktile_Calculator_Quote_Request {
 			sprintf( 'Reply-To: %s <%s>', $name, $email ),
 		);
 
-		wp_mail( $adminRecipients, $subject, $message, $headers );
+		// Mellékletek előkészítése (PDF és feltöltött képek)
+		$attachments = array();
+		$tempFiles   = array();
+
+		$uploadDir = wp_upload_dir();
+		$tempDir   = trailingslashit( $uploadDir['basedir'] ) . 'rocktile-pdf-temp';
+		if ( ! file_exists( $tempDir ) ) {
+			wp_mkdir_p( $tempDir );
+		}
+
+		$tempPdfFile = null;
+		if ( ! empty( $pdfBase64 ) ) {
+			$cleanBase64 = preg_replace( '#^data:application/\w+;base64,#i', '', $pdfBase64 );
+			$pdfDecoded  = base64_decode( $cleanBase64 );
+			if ( $pdfDecoded ) {
+				$tempPdfFile = trailingslashit( $tempDir ) . 'Rocktile-Arajanlat-' . sanitize_file_name( $quoteId ) . '.pdf';
+				if ( false !== file_put_contents( $tempPdfFile, $pdfDecoded ) ) {
+					$attachments[] = $tempPdfFile;
+					$tempFiles[]   = $tempPdfFile;
+				}
+			}
+		}
+
+		if ( ! empty( $savedImages ) ) {
+			foreach ( $savedImages as $sImg ) {
+				$attachments[] = $sImg['file'];
+			}
+		}
+
+		wp_mail( $adminRecipients, $subject, $message, $headers, $attachments );
 
 		// Visszaigazoló email az ügyfélnek
+		$clientAttachments = array();
+		if ( ! empty( $tempPdfFile ) ) {
+			$clientAttachments[] = $tempPdfFile;
+		}
+
 		if ( $isStep3Help ) {
 			$clientSubject = sprintf( 'Köszönjük megkeresését – Segítség a méretekhez – Rocktile (%s)', $quoteId );
+			$photoNote     = ! empty( $images ) ? sprintf( '<p style="color: #15803d; font-weight: 500;">✓ A csatolt fotó(ka)t / tervrajzot (%d db) sikeresen megkaptuk.</p>', count( $images ) ) : '';
 			$clientIntroText = sprintf(
 				'<p>Kedves <strong>%s</strong>!</p>
 				<p>Köszönjük, hogy felkereste a Rocktile online tetőkalkulátorát. Értesültünk róla, hogy szakértői segítségre van szüksége a tető pontos méreteinek megadásához és a tetőanyagok felméréséhez (Azonosító: <strong>%s</strong>).</p>
+				%s
 				<p>Kollégánk hamarosan felveszi Önnel a kapcsolatot a megadott elérhetőségein (%s), hogy egyeztessen Önnel a részletekről, és segítsen a pontos árajánlat összeállításában.</p>',
 				esc_html( $name ),
 				esc_html( $quoteId ),
+				$photoNote,
 				esc_html( $email . ( ! empty( $phone ) ? ' / ' . $phone : '' ) )
+			);
+		} elseif ( $isPdfEmail ) {
+			$clientSubject = sprintf( 'Az Ön Rocktile árajánlata (PDF csatolva) – %s', $quoteId );
+			$clientIntroText = sprintf(
+				'<p>Kedves <strong>%s</strong>!</p>
+				<p>Köszönjük, hogy a Rocktile online tetőkalkulátorát használta. Mellékelten csatolva küldjük az Ön által kalkulált tető részletes, tételes PDF árajánlatát (Azonosító: <strong>%s</strong>).</p>
+				<p>A csatolt PDF dokumentumban megtalálja a kiválasztott elemek listáját, mennyiségeit és árait.</p>',
+				esc_html( $name ),
+				esc_html( $quoteId )
 			);
 		} else {
 			$clientSubject = sprintf( 'Köszönjük ajánlatkérését – Rocktile Tetőrendszerek (%s)', $quoteId );
@@ -469,7 +610,7 @@ class Rocktile_Calculator_Quote_Request {
 				</div>
 			</body>
 			</html>',
-			esc_html( $isStep3Help ? 'Segítségkérés visszaigazolása' : 'Árajánlat visszaigazolása' ),
+			esc_html( $isStep3Help ? 'Segítségkérés visszaigazolása' : ( $isPdfEmail ? 'Árajánlat (PDF csatolva)' : 'Árajánlat visszaigazolása' ) ),
 			$clientIntroText,
 			esc_html( $roofName ),
 			esc_html( $productName ),
@@ -484,7 +625,23 @@ class Rocktile_Calculator_Quote_Request {
 			sprintf( 'Reply-To: %s <%s>', $fromName, $fromEmail ),
 		);
 
-		wp_mail( $email, $clientSubject, $clientMessage, $clientHeaders );
+		wp_mail( $email, $clientSubject, $clientMessage, $clientHeaders, $clientAttachments );
+
+		// Ideiglenes fájlok törlése a kiküldés után
+		if ( ! empty( $tempFiles ) ) {
+			foreach ( $tempFiles as $tFile ) {
+				if ( file_exists( $tFile ) ) {
+					@unlink( $tFile );
+				}
+			}
+		}
+
+		/**
+		 * Fire action when newsletter subscription consent is checked.
+		 */
+		if ( $newsletterConsent ) {
+			do_action( 'rocktile_newsletter_subscribed', $email, $name, $params );
+		}
 
 		/**
 		 * Fire action when a quote request is successfully submitted from calculator.
@@ -497,13 +654,16 @@ class Rocktile_Calculator_Quote_Request {
 
 		$respMessage = $isStep3Help
 			? 'Segítségkérését sikeresen beküldtük kollégáinknak! Munkatársunk hamarosan felveszi Önnel a kapcsolatot.'
-			: 'Ajánlatkérését sikeresen beküldtük kollégáinknak! Munkatársunk hamarosan felveszi Önnel a kapcsolatot.';
+			: ( $isPdfEmail
+				? 'Árajánlatát (PDF) sikeresen elküldtük az Ön email címére! Kérjük, ellenőrizze postaládáját.'
+				: 'Ajánlatkérését sikeresen beküldtük kollégáinknak! Munkatársunk hamarosan felveszi Önnel a kapcsolatot.' );
 
 		$responsePayload = array(
-			'success' => true,
-			'quoteId' => $quoteId,
-			'message' => $respMessage,
-			'note'    => $fullNote,
+			'success'   => true,
+			'quoteId'   => $quoteId,
+			'message'   => $respMessage,
+			'note'      => $fullNote,
+			'imageUrls' => ! empty( $savedImages ) ? wp_list_pluck( $savedImages, 'url' ) : array(),
 		);
 
 		if ( $isStep3Help ) {
@@ -511,6 +671,11 @@ class Rocktile_Calculator_Quote_Request {
 			$responsePayload['tag']             = 'ROCKTILE - SEGÍTSÉG';
 			$responsePayload['deal_label']      = 'ROCKTILE - SEGÍTSÉG';
 			$responsePayload['pipedrive_label'] = 'ROCKTILE - SEGÍTSÉG';
+		} elseif ( $isPdfEmail ) {
+			$responsePayload['label']           = 'ROCKTILE - PDF AJÁNLAT';
+			$responsePayload['tag']             = 'ROCKTILE - PDF AJÁNLAT';
+			$responsePayload['deal_label']      = 'ROCKTILE - PDF AJÁNLAT';
+			$responsePayload['pipedrive_label'] = 'ROCKTILE - PDF AJÁNLAT';
 		} else {
 			$responsePayload['label']           = 'ROCKTILE - KALKULÁTOR';
 			$responsePayload['tag']             = 'ROCKTILE - KALKULÁTOR';

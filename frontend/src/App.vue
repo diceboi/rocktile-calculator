@@ -52,11 +52,11 @@ watch(
           <component
             :is="
               state.currentStep === 1
-                ? StepRoofType
+                ? StepProduct
                 : state.currentStep === 2
-                  ? StepDimensions
+                  ? StepRoofType
                   : state.currentStep === 3
-                    ? StepProduct
+                    ? StepDimensions
                     : state.currentStep === 4
                       ? StepVentilation
                       : state.currentStep === 5

@@ -3,7 +3,7 @@
  * Plugin Name:       Rocktile Calculator
  * Plugin URI:        https://rocktile.eu
  * Description:       Rocktile tetőkalkulátor Vue alapú frontenddel.
- * Version:           1.1.0
+ * Version:           1.1.3
  * Author:            Rocktile
  * Text Domain:       rocktile-calculator
  * Domain Path:       /languages
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'ROCKTILE_CALCULATOR_VERSION', '1.1.0' );
+define( 'ROCKTILE_CALCULATOR_VERSION', '1.1.3' );
 define( 'ROCKTILE_CALCULATOR_FILE', __FILE__ );
 define( 'ROCKTILE_CALCULATOR_PATH', plugin_dir_path( __FILE__ ) );
 define( 'ROCKTILE_CALCULATOR_URL', plugin_dir_url( __FILE__ ) );

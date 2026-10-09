@@ -168,23 +168,37 @@
 }
 
 .rocktile-calculator-ui button.rc-quote-btn {
-  border: 2px solid var(--color-navy) !important;
-  background-color: #ffffff !important;
-  color: var(--color-navy) !important;
+  border: 2px solid var(--color-brick) !important;
+  background-color: var(--color-brick) !important;
+  color: #ffffff !important;
   white-space: normal !important;
   text-align: center !important;
   line-height: 1.3 !important;
   min-height: 48px !important;
+  font-family: var(--font-heading) !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  box-shadow: 0 2px 4px rgba(207, 63, 41, 0.2) !important;
+  transition: all 0.2s ease !important;
 }
 
 .rocktile-calculator-ui button.rc-quote-btn:hover:not(:disabled) {
-  border-color: var(--color-navy) !important;
-  background-color: var(--color-navy) !important;
+  border-color: var(--color-brick-hover) !important;
+  background-color: var(--color-brick-hover) !important;
   color: #ffffff !important;
+  box-shadow: 0 4px 8px rgba(207, 63, 41, 0.3) !important;
 }
 
 .rocktile-calculator-ui button.rc-quote-btn:hover:not(:disabled) svg {
   color: #ffffff !important;
+}
+
+.rocktile-calculator-ui button.rc-quote-btn:disabled {
+  border-color: #cbd5e1 !important;
+  background-color: #cbd5e1 !important;
+  color: #64748b !important;
+  box-shadow: none !important;
+  cursor: not-allowed !important;
 }
 
 /* ══════════════════════════════════════════════════════
@@ -473,10 +487,43 @@ button.rc-modal-btn-secondary:hover:not(:disabled),
 
 .rocktile-calculator-ui button.rc-cart-btn {
   width: 100% !important;
-  padding: 14px 28px !important;
+  min-height: 48px !important;
+  padding: 12px 20px !important;
+  border: 1.5px solid #cbd5e1 !important;
+  background-color: #f8fafc !important;
+  color: #64748b !important;
   font-family: var(--font-heading) !important;
-  font-size: 16px !important;
-  font-weight: 700 !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  white-space: normal !important;
+  text-align: center !important;
+  transition: all 0.2s ease !important;
+}
+
+.rocktile-calculator-ui button.rc-cart-btn svg {
+  color: #64748b !important;
+  transition: color 0.2s ease !important;
+}
+
+.rocktile-calculator-ui button.rc-cart-btn:hover:not(:disabled) {
+  border-color: #94a3b8 !important;
+  background-color: #f1f5f9 !important;
+  color: var(--color-navy) !important;
+}
+
+.rocktile-calculator-ui button.rc-cart-btn:hover:not(:disabled) svg {
+  color: var(--color-navy) !important;
+}
+
+.rocktile-calculator-ui button.rc-cart-btn:disabled {
+  border-color: #e2e8f0 !important;
+  background-color: #f8fafc !important;
+  color: #94a3b8 !important;
+  cursor: not-allowed !important;
+}
+
+.rocktile-calculator-ui button.rc-cart-btn:disabled svg {
+  color: #94a3b8 !important;
 }
 
 /* Mennyiség léptető + és - gombok */

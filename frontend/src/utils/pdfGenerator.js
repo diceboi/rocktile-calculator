@@ -34,6 +34,7 @@ export async function generatePdfQuote({
   paletteFeeTotal,
   shippingFeeTotal,
   note,
+  download = true,
 }) {
   const quoteId   = calculationId || 'RT-' + Date.now().toString().slice(-6);
   const quoteDate = new Date().toLocaleDateString('hu-HU', {
@@ -255,7 +256,16 @@ export async function generatePdfQuote({
     const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
     pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight, undefined, 'FAST');
-    pdf.save(`Rocktile-Arajanlat-${quoteId}.pdf`);
+    if (download) {
+      pdf.save(`Rocktile-Arajanlat-${quoteId}.pdf`);
+    }
+
+    return {
+      quoteId,
+      base64: pdf.output('datauristring'),
+      blob: pdf.output('blob'),
+      pdf,
+    };
   } catch (error) {
     console.error('Hiba történt a PDF generálás során:', error);
     throw error;

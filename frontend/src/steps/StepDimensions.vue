@@ -168,10 +168,107 @@ const helpName = ref('');
 const helpEmail = ref('');
 const helpPhone = ref('');
 const helpNote = ref('');
+const helpPrivacyConsent = ref(false);
 const helpTouched = ref(false);
 const helpLoading = ref(false);
 const helpError = ref(null);
 const helpSuccess = ref(false);
+
+const helpImages = ref([]);
+const helpImagesUploading = ref(false);
+const helpImageInputRef = ref(null);
+
+function formatFileSize(bytes) {
+  if (!bytes) return '';
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return Math.round(bytes / 1024) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+function compressImage(file, maxWidth = 1600, maxHeight = 1600, quality = 0.82) {
+  return new Promise((resolve, reject) => {
+    if (!file.type || !file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve({ base64: e.target.result, preview: null });
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth || height > maxHeight) {
+          if (width > height) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          } else {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+        resolve({ base64: dataUrl, preview: dataUrl });
+      };
+      img.onerror = () => {
+        resolve({ base64: e.target.result, preview: e.target.result });
+      };
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function handleHelpFileSelect(event) {
+  const files = Array.from(event.target?.files || []);
+  if (!files.length) return;
+
+  const remainingSlots = 5 - helpImages.value.length;
+  if (remainingSlots <= 0) {
+    alert('Legfeljebb 5 kép tölthető fel.');
+    return;
+  }
+
+  const filesToProcess = files.slice(0, remainingSlots);
+  helpImagesUploading.value = true;
+
+  try {
+    for (const file of filesToProcess) {
+      if (file.size > 20 * 1024 * 1024) {
+        continue;
+      }
+      const { base64, preview } = await compressImage(file);
+      helpImages.value.push({
+        name: file.name,
+        size: file.size,
+        preview: preview || base64,
+        base64,
+      });
+    }
+  } catch (err) {
+    console.error('Kép feldolgozási hiba:', err);
+  } finally {
+    helpImagesUploading.value = false;
+    if (helpImageInputRef.value) {
+      helpImageInputRef.value.value = '';
+    }
+  }
+}
+
+function removeHelpImage(index) {
+  helpImages.value.splice(index, 1);
+}
 
 const isHelpNameValid = computed(() => helpName.value.trim().length > 0);
 const isHelpEmailValid = computed(() => {
@@ -191,6 +288,10 @@ async function submitStep3Help() {
     helpError.value = 'Kérjük, adjon meg egy érvényes email címet!';
     return;
   }
+  if (!helpPrivacyConsent.value) {
+    helpError.value = 'Kérjük, fogadja el az Adatkezelési tájékoztatót a folytatáshoz!';
+    return;
+  }
 
   helpLoading.value = true;
 
@@ -200,6 +301,11 @@ async function submitStep3Help() {
       email:           helpEmail.value.trim(),
       phone:           helpPhone.value.trim(),
       note:            helpNote.value.trim(),
+      privacyConsent:  true,
+      images:          helpImages.value.map(img => ({
+        name:   img.name,
+        base64: img.base64,
+      })),
       source:          'step3_help_request',
       label:           'ROCKTILE - SEGÍTSÉG',
       tag:             'ROCKTILE - SEGÍTSÉG',
@@ -255,8 +361,12 @@ function handleCloseHelpModal() {
       helpEmail.value = '';
       helpPhone.value = '';
       helpNote.value = '';
+      helpImages.value = [];
+      helpPrivacyConsent.value = false;
       helpError.value = null;
     }, 500);
+  } else {
+    helpPrivacyConsent.value = false;
   }
 }
 </script>
@@ -265,7 +375,7 @@ function handleCloseHelpModal() {
   <div class="flex flex-col gap-7">
     <!-- Step header -->
     <div class="rc-step-header">
-      <span class="rc-step-badge">2. lépés</span>
+      <span class="rc-step-badge">3. lépés</span>
       <h2 class="rc-step-heading">Adja meg a tető méreteit</h2>
     </div>
 
@@ -626,6 +736,102 @@ function handleCloseHelpModal() {
                   placeholder="pl. kb. mekkora a ház, van-e tervrajz, mikor kereshetjük..."
                   class="rc-field py-2 px-3 text-sm resize-none"
                 ></textarea>
+              </div>
+
+              <!-- Képfeltöltés a tetőről -->
+              <div class="flex flex-col gap-1.5">
+                <label class="font-heading text-xs font-bold text-navy flex items-center justify-between">
+                  <span class="flex items-center gap-1.5">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="size-3.5 text-brick">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                      <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                      <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                    <span>Fotó a tetőről vagy tervrajz:</span>
+                  </span>
+                  <span class="text-muted font-normal text-[11px]">(opcionális, max. 5 kép)</span>
+                </label>
+
+                <!-- Rejtett file input -->
+                <input
+                  ref="helpImageInputRef"
+                  type="file"
+                  accept="image/*,.pdf"
+                  multiple
+                  class="hidden"
+                  @change="handleHelpFileSelect"
+                />
+
+                <!-- Feltöltő gomb / dropzone ha kevesebb mint 5 kép van -->
+                <div
+                  v-if="helpImages.length < 5"
+                  @click="helpImageInputRef?.click()"
+                  class="flex items-center justify-center gap-2.5 p-3 border-2 border-dashed border-slate-300 hover:border-brick hover:bg-slate-50/70 rounded cursor-pointer transition-all text-center group"
+                >
+                  <div class="flex size-7 items-center justify-center rounded-full bg-slate-100 group-hover:bg-[#cf3f29]/10 text-slate-500 group-hover:text-brick transition-colors shrink-0">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="size-4">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                      <polyline points="17 8 12 3 7 8"></polyline>
+                      <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                  </div>
+                  <div class="text-left font-sans text-xs">
+                    <span class="font-bold text-navy group-hover:text-brick transition-colors block">Kattintson ide fotó feltöltéséhez</span>
+                    <span class="block text-[11px] text-slate-500">Kép a meglévő tetőről, épületről vagy tervrajz (JPG, PNG, WebP)</span>
+                  </div>
+                </div>
+
+                <!-- Betöltés folyamatban jelzés -->
+                <div v-if="helpImagesUploading" class="text-xs text-slate-500 italic flex items-center gap-2 py-1">
+                  <span class="rc-spinner size-3 border-2 border-slate-400 border-t-brick rounded-full"></span>
+                  <span>Kép optimalizálása folyamatban...</span>
+                </div>
+
+                <!-- Feltöltött képek előnézeti listája -->
+                <div v-if="helpImages.length > 0" class="flex flex-wrap gap-2 pt-1">
+                  <div
+                    v-for="(img, idx) in helpImages"
+                    :key="idx"
+                    class="relative group/thumb flex items-center gap-2 border border-slate-200 bg-slate-50/70 p-1.5 rounded pr-2 shadow-xs"
+                  >
+                    <img
+                      v-if="img.preview"
+                      :src="img.preview"
+                      alt="Előnézet"
+                      class="size-10 object-cover rounded border border-slate-200 bg-white"
+                    />
+                    <div class="flex flex-col min-w-0 max-w-[130px]">
+                      <span class="text-xs font-semibold text-slate-800 truncate" :title="img.name">{{ img.name }}</span>
+                      <span class="text-[10px] text-slate-400 font-mono">{{ formatFileSize(img.size) }}</span>
+                    </div>
+                    <button
+                      type="button"
+                      @click.stop="removeHelpImage(idx)"
+                      class="size-5 rounded-full bg-slate-200/80 hover:bg-red-500 hover:text-white text-slate-600 flex items-center justify-center transition-colors cursor-pointer ml-1"
+                      title="Kép eltávolítása"
+                      aria-label="Kép eltávolítása"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="size-3">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Adatkezelési tájékoztató hozzájárulás -->
+              <div class="flex items-start gap-2.5 pt-1">
+                <input
+                  id="step3-help-privacy"
+                  type="checkbox"
+                  v-model="helpPrivacyConsent"
+                  class="mt-1 size-4 shrink-0 rounded border-slate-300 text-brick focus:ring-brick cursor-pointer accent-[#cf3f29]"
+                  required
+                />
+                <label for="step3-help-privacy" class="font-sans text-xs text-slate-700 leading-snug cursor-pointer select-none">
+                  Elfogadom az <a href="/adatvedelmi-tajekoztato/" target="_blank" rel="noopener noreferrer" class="text-brick underline hover:text-navy font-semibold">Adatkezelési tájékoztatóban</a> foglaltakat. <span class="text-brick font-bold">*</span>
+                </label>
               </div>
             </div>
 
