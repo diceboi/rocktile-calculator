@@ -1317,7 +1317,7 @@ onMounted(() => {
           <span>Árajánlat küldése emailben (PDF)</span>
         </button>
 
-        <!-- 3. SZTENDERD TETŐFORMA: Kosárba rakom gomb (harmadik helyen, halvány megjelenéssel) -->
+        <!-- 3. SZTENDERD TETŐFORMA: Kosárba rakom gomb (ugyanolyan kék/fehér stílusban, mint az árajánlat küldése emailben) -->
         <button
           v-if="!calculationResult?.requiresManualReview"
           type="button"
@@ -1326,7 +1326,7 @@ onMounted(() => {
           @click="addToCart"
           :aria-busy="cartLoading"
         >
-          <span v-if="cartLoading" class="rc-spinner size-[18px] shrink-0 rounded-full border-2 border-slate-400 border-t-slate-700" aria-hidden="true"></span>
+          <span v-if="cartLoading" class="rc-spinner size-[18px] shrink-0 rounded-full border-2 border-navy/30 border-t-navy" aria-hidden="true"></span>
           <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-5 shrink-0" aria-hidden="true">
             <circle cx="9" cy="21" r="1"></circle>
             <circle cx="20" cy="21" r="1"></circle>

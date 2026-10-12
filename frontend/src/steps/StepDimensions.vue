@@ -375,7 +375,7 @@ function handleCloseHelpModal() {
   <div class="flex flex-col gap-7">
     <!-- Step header -->
     <div class="rc-step-header">
-      <span class="rc-step-badge">3. lépés</span>
+      <span class="rc-step-badge">2. lépés</span>
       <h2 class="rc-step-heading">Adja meg a tető méreteit</h2>
     </div>
 

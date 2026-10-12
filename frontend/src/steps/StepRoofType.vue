@@ -1,16 +1,43 @@
 <script setup>
+import { ref, nextTick } from 'vue';
 import { roofTypes } from '../config/roofTypes.js';
 import { useCalculator } from '../composables/useCalculator.js';
 import OptionCard from '../components/OptionCard.vue';
 
 const { state, selectedRoofGroup, selectRoofType, selectRoofSubtype } = useCalculator();
+
+const subtypeSectionRef = ref(null);
+
+const handleRoofTypeSelect = (roofId) => {
+  selectRoofType(roofId);
+  const group = roofTypes.find((r) => r.id === roofId);
+  if (group?.subtypes?.length > 0) {
+    nextTick(() => {
+      setTimeout(() => {
+        if (subtypeSectionRef.value) {
+          const reduceMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+          const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
+          const offset = isMobile ? 24 : 40;
+          const rect = subtypeSectionRef.value.getBoundingClientRect();
+          const scrollY = window.pageYOffset || window.scrollY || 0;
+          const targetY = rect.top + scrollY - offset;
+
+          window.scrollTo({
+            top: Math.max(0, targetY),
+            behavior: reduceMotion ? 'auto' : 'smooth',
+          });
+        }
+      }, 80);
+    });
+  }
+};
 </script>
 
 <template>
   <div class="flex flex-col gap-7">
     <!-- Step header -->
     <div class="rc-step-header">
-      <span class="rc-step-badge">2. lépés</span>
+      <span class="rc-step-badge">1. lépés</span>
       <h2 class="rc-step-heading">Válassza ki a tetőformát</h2>
     </div>
 
@@ -25,7 +52,7 @@ const { state, selectedRoofGroup, selectRoofType, selectRoofSubtype } = useCalcu
         image-fit="contain"
         placeholder-variant="roof"
         :selected="state.roofType === roof.id"
-        @click="selectRoofType(roof.id)"
+        @click="handleRoofTypeSelect(roof.id)"
       />
     </div>
 
@@ -33,7 +60,8 @@ const { state, selectedRoofGroup, selectRoofType, selectRoofSubtype } = useCalcu
     <transition name="rc-fade">
       <div
         v-if="selectedRoofGroup && selectedRoofGroup.subtypes && selectedRoofGroup.subtypes.length > 0"
-        class="border-t border-cream pt-6"
+        ref="subtypeSectionRef"
+        class="border-t border-cream pt-6 scroll-mt-6"
       >
         <div class="mb-4 flex items-center gap-2">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="size-[18px] shrink-0 text-brick" aria-hidden="true">

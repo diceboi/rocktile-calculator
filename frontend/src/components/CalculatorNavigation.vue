@@ -8,9 +8,9 @@ const { state, canProceed, nextStep, prevStep, openStep3Help } = useCalculator()
 const hintText = computed(() => {
   if (canProceed.value) return null;
   switch (state.currentStep) {
-    case 1: return 'Válasszon terméket és színt a folytatáshoz.';
-    case 2: return 'Válassza ki a tetőformát (és altípust) a folytatáshoz.';
-    case 3: return 'Töltse ki a tetőfelületet a folytatáshoz.';
+    case 1: return 'Válassza ki a tetőformát (és altípust) a folytatáshoz.';
+    case 2: return 'Töltse ki a tetőfelületet a folytatáshoz.';
+    case 3: return 'Válasszon színt a folytatáshoz.';
     case 4: return 'Válasszon szellőzési módot a folytatáshoz.';
     case 5: return 'Válassza ki a rögzítés módját a folytatáshoz.';
     default: return null;
@@ -40,8 +40,8 @@ const navigateAndScroll = (navigate) => {
       </p>
     </transition>
 
-    <!-- Segítségkérő gomb Step 3-nál (ha aktív) mobilon külön sorban -->
-    <div v-if="state.currentStep === 3" class="w-full flex justify-end">
+    <!-- Segítségkérő gomb Step 2-nél (ha aktív) mobilon külön sorban -->
+    <div v-if="state.currentStep === 2" class="w-full flex justify-end">
       <button
         type="button"
         class="rc-nav-help-btn w-full sm:w-auto"
