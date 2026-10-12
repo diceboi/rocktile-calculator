@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 import { useCalculator } from '../composables/useCalculator.js';
 
-const { state, goToStep } = useCalculator();
+const { state, goToStep, availableSteps } = useCalculator();
 
 const allSteps = [
   { step: 1, title: 'Tetőforma',      shortTitle: 'Tetőforma' },
@@ -13,7 +13,9 @@ const allSteps = [
   { step: 6, title: 'Összesítés',     shortTitle: 'Összesítés' },
 ];
 
-const visibleSteps = computed(() => allSteps);
+const visibleSteps = computed(() =>
+  allSteps.filter((s) => availableSteps.value.includes(s.step))
+);
 
 // Az aktuális lépés sorszáma a látható lista alapján
 const currentVisibleIndex = computed(() =>

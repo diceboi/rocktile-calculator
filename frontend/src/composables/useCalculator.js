@@ -1,4 +1,4 @@
-import { reactive, computed } from 'vue';
+import { reactive, computed, watch } from 'vue';
 import { products } from '../config/products.js';
 import { roofTypes, dimensionFields } from '../config/roofTypes.js';
 import { ventilationOptions } from '../config/ventilation.js';
@@ -159,12 +159,41 @@ export function useCalculator() {
     }
   };
 
+  // Szellőzés lépés elérhető-e (Barna esetén nincs szellőző elem)
+  const isVentilationStepAvailable = computed(() => {
+    return !state.color || state.color !== 'earthwood-chestnut';
+  });
+
+  // Rögzítés lépés elérhető-e (csak Antracit esetén választható szeg/csavar, egyébként fixen csavar)
+  const isFasteningStepAvailable = computed(() => {
+    return !state.color || state.color === 'shadow-rock';
+  });
+
+  // Elérhető lépések listája
+  const availableSteps = computed(() => {
+    const steps = [1, 2, 3];
+    if (isVentilationStepAvailable.value) {
+      steps.push(4);
+    }
+    if (isFasteningStepAvailable.value) {
+      steps.push(5);
+    }
+    steps.push(6);
+    return steps;
+  });
+
   // Szín kiválasztása
   const selectColor = (colorId) => {
     state.color = colorId;
-    // Ha a kiválasztott szín nem Antracit ('shadow-rock'), a szegelt rögzítés nem elérhető -> csavarosra váltás
-    if (colorId !== 'shadow-rock' && state.fastening === 'nail') {
+    // Ha a kiválasztott szín nem Antracit ('shadow-rock'), a szegelt rögzítés nem elérhető -> automatikusan csavaros
+    if (colorId !== 'shadow-rock') {
       state.fastening = 'screw';
+    }
+    // Ha a kiválasztott szín Barna ('earthwood-chestnut'), nincs szellőző elem -> törlés
+    if (colorId === 'earthwood-chestnut') {
+      state.hasVentilation = false;
+      state.ventilation = 'none';
+      state.ventilationCount = 1;
     }
   };
 
@@ -304,25 +333,47 @@ export function useCalculator() {
   // Tovább navigáció
   const nextStep = () => {
     if (!canProceed.value) return;
-    if (state.currentStep < 6) {
-      state.currentStep++;
+    const steps = availableSteps.value;
+    const currentIndex = steps.indexOf(state.currentStep);
+    if (currentIndex !== -1 && currentIndex < steps.length - 1) {
+      state.currentStep = steps[currentIndex + 1];
+    } else if (state.currentStep < 6) {
+      const next = steps.find((s) => s > state.currentStep) || 6;
+      state.currentStep = next;
     }
   };
 
   // Vissza navigáció
   const prevStep = () => {
-    if (state.currentStep > 1) {
-      state.currentStep--;
+    const steps = availableSteps.value;
+    const currentIndex = steps.indexOf(state.currentStep);
+    if (currentIndex > 0) {
+      state.currentStep = steps[currentIndex - 1];
+    } else if (state.currentStep > 1) {
+      const prev = [...steps].reverse().find((s) => s < state.currentStep) || 1;
+      state.currentStep = prev;
     }
   };
 
   // Ugrás közvetlen lépésre (ha engedélyezett)
   const goToStep = (stepNumber) => {
-    if (stepNumber < 1 || stepNumber > 6) return;
+    const steps = availableSteps.value;
+    if (!steps.includes(stepNumber)) return;
     if (stepNumber < state.currentStep) {
       state.currentStep = stepNumber;
     }
   };
+
+  watch(
+    () => availableSteps.value,
+    (steps) => {
+      if (!steps.includes(state.currentStep)) {
+        if (state.currentStep > 3) {
+          state.currentStep = 6;
+        }
+      }
+    }
+  );
 
   // Teljes reset
   const resetCalculator = () => {
@@ -383,5 +434,8 @@ export function useCalculator() {
     resetCalculator,
     openStep3Help,
     closeStep3Help,
+    isVentilationStepAvailable,
+    isFasteningStepAvailable,
+    availableSteps,
   };
 }

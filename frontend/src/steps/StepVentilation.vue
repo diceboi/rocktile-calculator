@@ -13,8 +13,6 @@ const activeOption = {
   image: null,
 };
 
-const isBrownColor = computed(() => state.color === 'earthwood-chestnut');
-
 const ventilationImage = computed(() =>
   catalog.value?.ventilation?.colors?.[state.color]?.image || activeOption.image
 );
@@ -38,9 +36,6 @@ const increaseCount = () => {
 
 onMounted(() => {
   loadCatalog();
-  if (isBrownColor.value && state.hasVentilation) {
-    setHasVentilation(false);
-  }
 });
 </script>
 
@@ -50,23 +45,6 @@ onMounted(() => {
     <div class="rc-step-header">
       <span class="rc-step-badge">4. lépés</span>
       <h2 class="rc-step-heading">Tetőn átmenő szellőző / átvezető elem</h2>
-    </div>
-
-    <!-- Tájékoztató barna szín esetén -->
-    <div v-if="isBrownColor" class="rc-info-block">
-      <div class="rc-info-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="size-4" aria-hidden="true">
-          <circle cx="12" cy="12" r="10"></circle>
-          <line x1="12" y1="8" x2="12" y2="12"></line>
-          <line x1="12" y1="16" x2="12.01" y2="16"></line>
-        </svg>
-      </div>
-      <div class="flex flex-col gap-1">
-        <strong class="font-heading text-sm font-bold text-navy">Barna színben nem elérhető</strong>
-        <p class="m-0 font-sans text-xs leading-relaxed text-slate-700">
-          A kiválasztott <strong>Barna (Earthwood Chestnut)</strong> színváltozatban jelenleg nem rendelhető szellőző átvezető elem. A kalkuláció szellőző nélkül folytatódik.
-        </p>
-      </div>
     </div>
 
     <!-- Kiemelt gyors magyarázó sáv: Fontos tudnivaló -->

@@ -12,9 +12,6 @@ const isNailAvailable = computed(() => {
 const isNailDisabled = computed(() => !isNailAvailable.value);
 
 function handleSelectFastening(optionId) {
-  if (optionId === 'nail' && isNailDisabled.value) {
-    return;
-  }
   selectFastening(optionId);
 }
 </script>
@@ -25,27 +22,6 @@ function handleSelectFastening(optionId) {
     <div class="rc-step-header">
       <span class="rc-step-badge">5. lépés</span>
       <h2 class="rc-step-heading">Rögzítés módja</h2>
-    </div>
-
-    <!-- Tájékoztató sáv ha a szegelt rögzítés nem elérhető (egységes kék stílus) -->
-    <div
-      v-if="isNailDisabled"
-      class="rc-info-block"
-      role="note"
-    >
-      <div class="rc-info-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="size-4" aria-hidden="true">
-          <circle cx="12" cy="12" r="10"></circle>
-          <line x1="12" y1="8" x2="12" y2="12"></line>
-          <line x1="12" y1="16" x2="12.01" y2="16"></line>
-        </svg>
-      </div>
-      <div class="flex flex-col gap-1">
-        <strong class="font-heading text-sm font-bold text-navy">Csavaros rögzítés szükséges</strong>
-        <p class="m-0 font-sans text-xs leading-relaxed text-slate-700">
-          A kiválasztott <strong>{{ selectedColor?.name || 'szín' }}</strong> esetében a szegelt rögzítés jelenleg nem elérhető, ezért ehhez a színhez kizárólag a <strong>csavaros rögzítés</strong> választható.
-        </p>
-      </div>
     </div>
 
     <!-- Opció kártyák grid - kompakt mobilon és desktopon -->
