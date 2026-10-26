@@ -58,8 +58,8 @@ class Rocktile_Calculator_Quote_Request {
 			return new WP_Error( 'invalid_email', 'Kérjük, adjon meg egy érvényes email címet.', array( 'status' => 400 ) );
 		}
 
-		// A 3. lépésbeli segítségkérésnél és a PDF email küldésnél a telefonszám opcionális, részletes ajánlatkérésnél kötelező
-		if ( ! $isStep3Help && ! $isPdfEmail && empty( $phone ) ) {
+		// A 3. lépésbeli segítségkérésnél a telefonszám opcionális, ajánlatkérésnél és PDF email küldésnél kötelező
+		if ( ! $isStep3Help && empty( $phone ) ) {
 			return new WP_Error( 'missing_phone', 'Kérjük, adja meg telefonszámát.', array( 'status' => 400 ) );
 		}
 

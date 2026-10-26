@@ -547,6 +547,10 @@ async function submitEmailPdfQuote() {
     emailPdfError.value = 'Kérjük, adjon meg egy érvényes email címet!';
     return;
   }
+  if (!emailPdfPhone.value.trim()) {
+    emailPdfError.value = 'Kérjük, adja meg a telefonszámát!';
+    return;
+  }
   if (!emailPdfPrivacyConsent.value) {
     emailPdfError.value = 'Kérjük, fogadja el az Adatkezelési tájékoztatót a folytatáshoz!';
     return;
@@ -1527,7 +1531,7 @@ onMounted(() => {
                   Árajánlat küldése emailben (PDF)
                 </h3>
                 <p class="mt-0.5 mb-0 font-sans text-xs text-muted leading-relaxed">
-                  Adja meg nevét és e-mail címét, és azonnal elküldjük a kalkuláció részletes PDF kivonatát!
+                  Adja meg adatait, és azonnal elküldjük a kalkuláció részletes PDF kivonatát!
                 </p>
               </div>
             </div>
@@ -1641,7 +1645,7 @@ onMounted(() => {
 
                 <div class="flex flex-col gap-1">
                   <label for="epdf-phone" class="font-heading text-xs font-bold text-navy">
-                    Telefonszám <span class="text-slate-400 font-normal">(opcionális)</span>
+                    Telefonszám <span class="text-brick">*</span>
                   </label>
                   <input
                     id="epdf-phone"
@@ -1649,6 +1653,8 @@ onMounted(() => {
                     v-model="emailPdfPhone"
                     placeholder="Pl. +36 30 123 4567"
                     class="rc-field py-2 px-3 text-sm"
+                    :class="emailPdfTouched && !emailPdfPhone.trim() ? 'border-red-500 bg-red-50' : ''"
+                    required
                   />
                 </div>
               </div>
